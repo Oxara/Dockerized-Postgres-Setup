@@ -1,0 +1,27 @@
+# Environment dosyaları
+.env
+.env.local
+.env.*.local
+.env.dev
+.env.test
+.env.prod
+environments/*/.env
+
+# Eski dosyalar
+docker-compose.yml.old
+.env.old
+
+# Backup dosyaları
+*.sql
+*.dump
+*.tar.gz
+backup/
+backups/
+
+# Log dosyaları
+logs/
+*.log
+
+# Geçici dosyalar
+.DS_Store
+Thumbs.db
