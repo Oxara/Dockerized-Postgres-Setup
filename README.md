@@ -1,6 +1,6 @@
 # PostgreSQL Multi-Environment Docker Setup
 
-Modern, best-practice yaklaşımıyla hazırlanmış multi-environment PostgreSQL + pgAdmin kurulumu.
+Modern, best-practice yaklaşımıyla hazırlanmış multi-environment PostgreSQL + pgAdmin + Grafana kurulumu.
 
 ## 📁 Klasör Yapısı
 
@@ -9,13 +9,16 @@ postgres-docker/
 ├── environments/
 │   ├── dev/
 │   │   ├── docker-compose.yml
-│   │   └── .env
+│   │   ├── .env
+│   │   └── grafana-datasources.yml
 │   ├── test/
 │   │   ├── docker-compose.yml
-│   │   └── .env
+│   │   ├── .env
+│   │   └── grafana-datasources.yml
 │   ├── prod/
 │   │   ├── docker-compose.yml
-│   │   └── .env
+│   │   ├── .env
+│   │   └── grafana-datasources.yml
 │   └── .env.example
 ├── manage.ps1              # Windows yönetim scripti
 ├── manage.sh               # Linux/Mac yönetim scripti
@@ -29,15 +32,18 @@ postgres-docker/
 
 - **`environments/dev/`** - Development (Geliştirme) ortamı
   - `docker-compose.yml` - Dev için compose yapılandırması
-  - `.env` - Dev ortam değişkenleri (port: 5432, 5050)
+  - `.env` - Dev ortam değişkenleri (port: 5432, 5050, 3000)
+  - `grafana-datasources.yml` - Grafana otomatik datasource yapılandırması
 
 - **`environments/test/`** - Test ortamı
   - `docker-compose.yml` - Test için compose yapılandırması
-  - `.env` - Test ortam değişkenleri (port: 5433, 5051)
+  - `.env` - Test ortam değişkenleri (port: 5433, 5051, 3001)
+  - `grafana-datasources.yml` - Grafana otomatik datasource yapılandırması
 
 - **`environments/prod/`** - Production (Canlı) ortamı
   - `docker-compose.yml` - Prod için compose yapılandırması
-  - `.env` - Prod ortam değişkenleri (port: 5434, 5052)
+  - `.env` - Prod ortam değişkenleri (port: 5434, 5052, 3002)
+  - `grafana-datasources.yml` - Grafana otomatik datasource yapılandırması
 
 - **`environments/.env.example`** - Şablon dosya (yeni ortam eklemek için)
 
@@ -60,8 +66,8 @@ cp environments/.env.example environments/staging/.env
 cp environments/dev/docker-compose.yml environments/staging/docker-compose.yml
 
 # 4. Değerleri düzenle (.env ve docker-compose.yml)
-# - Container isimleri: postgres_staging, pgadmin_staging
-# - Portlar: 5435, 5053 (benzersiz olmalı)
+# - Container isimleri: postgres_staging, pgadmin_staging, grafana_staging
+# - Portlar: 5435, 5053, 3003 (benzersiz olmalı)
 # - Volume ve network isimleri: postgres_staging_*, postgres_staging_network
 
 # 5. Başlat
@@ -77,6 +83,8 @@ docker-compose up -d
 - ✅ **Kolay Yönetim**: Hazır scriptler ile tek komutla yönetim
 - ✅ **Çakışma Yok**: Her ortam farklı portlarda çalışır
 - ✅ **Best Practices**: Docker ve DevOps standartlarına uygun
+- ✅ **Görselİzleme**: Grafana ile PostgreSQL metrik ve veri görselleştirme
+- ✅ **Otomatik Yapılandırma**: Grafana datasource'ları otomatik yüklenirken
 
 ## 🚀 Hızlı Başlangıç
 
@@ -95,9 +103,9 @@ cp environments/.env.example environments/prod/.env
 
 **Her ortam için portları ayarlayın:**
 
-- **Dev:** `POSTGRES_PORT=5432`, `PGADMIN_PORT=5050`
-- **Test:** `POSTGRES_PORT=5433`, `PGADMIN_PORT=5051`
-- **Prod:** `POSTGRES_PORT=5434`, `PGADMIN_PORT=5052`
+- **Dev:** `POSTGRES_PORT=5432`, `PGADMIN_PORT=5050`, `GRAFANA_PORT=3000`
+- **Test:** `POSTGRES_PORT=5433`, `PGADMIN_PORT=5051`, `GRAFANA_PORT=3001`
+- **Prod:** `POSTGRES_PORT=5434`, `PGADMIN_PORT=5052`, `GRAFANA_PORT=3002`
 
 **Güvenlik için şifreleri değiştirin:**
 
@@ -105,14 +113,17 @@ cp environments/.env.example environments/prod/.env
 # environments/dev/.env
 POSTGRES_PASSWORD=güçlü_dev_şifresi
 PGADMIN_PASSWORD=güçlü_pgadmin_şifresi
+GRAFANA_ADMIN_PASSWORD=güçlü_grafana_şifresi
 
 # environments/test/.env
 POSTGRES_PASSWORD=güçlü_test_şifresi
 PGADMIN_PASSWORD=güçlü_pgadmin_şifresi
+GRAFANA_ADMIN_PASSWORD=güçlü_grafana_şifresi
 
 # environments/prod/.env
 POSTGRES_PASSWORD=ÇOK_GÜÇLÜ_PROD_ŞİFRESİ_123!@#
 PGADMIN_PASSWORD=ÇOK_GÜÇLÜ_PGADMIN_ŞİFRESİ_456!@#
+GRAFANA_ADMIN_PASSWORD=ÇOK_GÜÇLÜ_GRAFANA_ŞİFRESİ_789!@#
 ```
 
 > 💡 **İpucu:** `environments/.env.example` dosyasında detaylı açıklamalar ve kurulum adımları bulunmaktadır.
@@ -142,11 +153,11 @@ docker-compose -f environments/dev/docker-compose.yml up -d
 
 ### 3️⃣ Erişim
 
-| Ortam | PostgreSQL | pgAdmin |
-|-------|-----------|---------|
-| **Dev** | `localhost:5432` | http://localhost:5050 |
-| **Test** | `localhost:5433` | http://localhost:5051 |
-| **Prod** | `localhost:5434` | http://localhost:5052 |
+| Ortam | PostgreSQL | pgAdmin | Grafana |
+|-------|-----------|---------|----------|
+| **Dev** | `localhost:5432` | http://localhost:5050 | http://localhost:3000 |
+| **Test** | `localhost:5433` | http://localhost:5051 | http://localhost:3001 |
+| **Prod** | `localhost:5434` | http://localhost:5052 | http://localhost:3002 |
 
 ## 📖 Kullanım Kılavuzu
 
@@ -236,14 +247,19 @@ POSTGRES_PORT=5432
 PGADMIN_EMAIL=admin.dev@example.com
 PGADMIN_PASSWORD=pgadmin_şifresi
 PGADMIN_PORT=5050
+
+# Grafana Settings
+GRAFANA_PORT=3000
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=grafana_şifresi
 ```
 
 ### Port Yapılandırması
 
 Default portlar:
-- **Dev**: PostgreSQL 5432, pgAdmin 5050
-- **Test**: PostgreSQL 5433, pgAdmin 5051
-- **Prod**: PostgreSQL 5434, pgAdmin 5052
+- **Dev**: PostgreSQL 5432, pgAdmin 5050, Grafana 3000
+- **Test**: PostgreSQL 5433, pgAdmin 5051, Grafana 3001
+- **Prod**: PostgreSQL 5434, pgAdmin 5052, Grafana 3002
 
 Port değiştirmek için ilgili ortamın `.env` dosyasını düzenleyin.
 
@@ -314,6 +330,43 @@ const pool = new Pool({
   user: 'postgres_dev_user',
   password: 'your_password'
 });
+```
+
+### Grafana'dan Bağlanma
+
+Grafana otomatik olarak PostgreSQL'e bağlanacak şekilde yapılandırılmıştır.
+
+1. **Grafana'ya Giriş Yapın:**
+   - Development: http://localhost:3000
+   - Test: http://localhost:3001
+   - Production: http://localhost:3002
+   - Username: `admin` (veya .env'deki `GRAFANA_ADMIN_USER`)
+   - Password: `.env` dosyasındaki `GRAFANA_ADMIN_PASSWORD`
+
+2. **PostgreSQL Datasource Otomatik Yüklenir:**
+   - Grafana başladığında `grafana-datasources.yml` dosyası otomatik olarak yüklenir
+   - PostgreSQL bağlantısı hazır durumda olacaktır
+   - Sol menüden **Connections** → **Data sources** → **PostgreSQL** seçerek test edebilirsiniz
+
+3. **Dashboard Oluşturma:**
+   - Sol menüden **Dashboards** → **New Dashboard** tıklayın
+   - **Add visualization** seçin
+   - PostgreSQL datasource'u seçin
+   - SQL sorguları yazarak verilerinizi görselleştirin
+
+**Örnek Grafana SQL Sorgusu:**
+```sql
+-- Veritabanı büyüklüğünü göster
+SELECT 
+  pg_database.datname,
+  pg_size_pretty(pg_database_size(pg_database.datname)) AS size
+FROM pg_database
+ORDER BY pg_database_size(pg_database.datname) DESC;
+
+-- Aktif bağlantıları göster
+SELECT count(*) as connections, datname 
+FROM pg_stat_activity 
+GROUP BY datname;
 ```
 
 ## 🛡️ Güvenlik En İyi Pratikleri
@@ -399,6 +452,7 @@ docker-compose logs --tail=100
 # Belirli bir servisin logları
 docker logs postgres_dev
 docker logs pgadmin_dev
+docker logs grafana_dev
 ```
 
 ### Backup Alma
@@ -590,6 +644,8 @@ docker ps | grep prod
 
 - [PostgreSQL Resmi Dokümantasyon](https://www.postgresql.org/docs/)
 - [pgAdmin Dokümantasyon](https://www.pgadmin.org/docs/)
+- [Grafana Dokümantasyon](https://grafana.com/docs/grafana/latest/)
+- [Grafana PostgreSQL Data Source](https://grafana.com/docs/grafana/latest/datasources/postgres/)
 - [Docker Compose Referans](https://docs.docker.com/compose/)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 
@@ -603,12 +659,13 @@ A: Evet, her ortam farklı portlarda olduğu için sorunsuzca çalışabilir.
 
 **S: Eski yapıdan nasıl geçiş yaparım?**
 A: Eski yapıdaki .env dosyalarını ilgili ortamların klasörlerine taşıyın ve yeni komutları kullanın.
-
+**S: Grafana datasource otomatik yüklenmiyor, ne yapmalıyım?**
+A: `grafana-datasources.yml` dosyasının ilgili ortam klasöründe olduğundan ve Grafana container'ının yeniden başlatıldığından emin olun. Manuel olarak da ekleyebilirsiniz.
 **S: Production'da restart policy neden "always"?**
 A: Production'da sunucu yeniden başladığında containerların otomatik başlaması için. Dev/Test'te "unless-stopped" kullanıyoruz.
 
 ---
 
-**Hazırlayan:** Best Practices ile Docker & PostgreSQL Setup  
+**Hazırlayan:** Best Practices ile Docker & PostgreSQL & Grafana Setup  
 **Son Güncelleme:** 2026-02-15  
-**Versiyon:** 2.0 - Multi-Environment Isolated Structure
+**Versiyon:** 3.0 - Multi-Environment with Grafana Visualization
