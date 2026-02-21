@@ -1,0 +1,47 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis_prod
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "${REDIS_PORT:-6381}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - redis_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight_prod
+    restart: always
+    ports:
+      - "${REDISINSIGHT_PORT:-8003}:5540"
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      - redis_network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+    name: redis_prod_data
+    driver: local
+  redisinsight_data:
+    name: redisinsight_prod_data
+    driver: local
+
+networks:
+  redis_network:
+    name: redis_prod_network
+    driver: bridge

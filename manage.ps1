@@ -1,8 +1,15 @@
-# PostgreSQL Docker Environment Yönetim Scripti
-# Kullanım: .\manage.ps1 [komut] [ortam]
-# Örnek: .\manage.ps1 start dev
-#        .\manage.ps1 start all
-#        .\manage.ps1 stop test
+# Multi-Service Docker Environment Management Script
+# Services: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring (Prometheus + Grafana)
+# Usage: .\manage.ps1 [action] [environment] [service]
+# Example: .\manage.ps1 start dev postgres
+#          .\manage.ps1 start dev redis
+#          .\manage.ps1 start dev rabbitmq
+#          .\manage.ps1 start dev elasticsearch
+#          .\manage.ps1 start dev mongodb
+#          .\manage.ps1 start dev monitoring
+#          .\manage.ps1 start dev all
+#          .\manage.ps1 stop test all
+#          .\manage.ps1 status prod all
 
 param(
     [Parameter(Mandatory=$true)]
@@ -10,19 +17,57 @@ param(
     [string]$Action,
     
     [Parameter(Mandatory=$true)]
-    [ValidateSet("dev", "test", "prod", "all")]
-    [string]$Environment
+    [ValidateSet("dev", "test", "prod")]
+    [string]$Environment,
+    
+    [Parameter(Mandatory=$true)]
+    [ValidateSet("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "all")]
+    [string]$Service
 )
 
 $ErrorActionPreference = "Stop"
 
-# Renk fonksiyonları
+# Color functions
 function Write-Success { Write-Host $args -ForegroundColor Green }
 function Write-Info { Write-Host $args -ForegroundColor Cyan }
 function Write-Warning { Write-Host $args -ForegroundColor Yellow }
-function Write-Error { Write-Host $args -ForegroundColor Red }
+function Write-ErrorMessage { Write-Host $args -ForegroundColor Red }
 
-# Ortam bilgileri
+# Service information
+$services = @{
+    "postgres" = @{
+        "name" = "PostgreSQL"
+        "path" = "postgres"
+        "icon" = "[PG]"
+    }
+    "redis" = @{
+        "name" = "Redis"
+        "path" = "redis"
+        "icon" = "[RD]"
+    }
+    "rabbitmq" = @{
+        "name" = "RabbitMQ"
+        "path" = "rabbitmq"
+        "icon" = "[MQ]"
+    }
+    "elasticsearch" = @{
+        "name" = "Elasticsearch"
+        "path" = "elasticsearch"
+        "icon" = "[ES]"
+    }
+    "mongodb" = @{
+        "name" = "MongoDB"
+        "path" = "mongodb"
+        "icon" = "[DB]"
+    }
+    "monitoring" = @{
+        "name" = "Monitoring"
+        "path" = "monitoring"
+        "icon" = "[MT]"
+    }
+}
+
+# Environment information
 $environments = @{
     "dev" = @{
         "path" = "environments/dev"
@@ -39,136 +84,188 @@ $environments = @{
 }
 
 function Start-Environment {
-    param([string]$env)
+    param(
+        [string]$env,
+        [string]$svc
+    )
     
     $envInfo = $environments[$env]
-    $envPath = $envInfo.path
+    $svcInfo = $services[$svc]
+    $fullPath = "$($svcInfo.path)/$($envInfo.path)"
+    $projectName = "$($svc)_$($env)"
     
-    Write-Info "🚀 $($envInfo.name) ortamı başlatılıyor..."
+    Write-Info "$($svcInfo.icon) $($svcInfo.name) - $($envInfo.name) starting..."
     
-    if (-not (Test-Path "$envPath/docker-compose.yml")) {
-        Write-Error "❌ $envPath/docker-compose.yml dosyası bulunamadı!"
-        exit 1
+    if (-not (Test-Path "$fullPath/docker-compose.yml")) {
+        Write-ErrorMessage "ERROR: $fullPath/docker-compose.yml not found!"
+        return
     }
     
-    Push-Location $envPath
-    docker-compose up -d
+    Push-Location $fullPath
+    docker-compose -p $projectName up -d --remove-orphans
     Pop-Location
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Success "✅ $($envInfo.name) ortamı başarıyla başlatıldı!"
+        Write-Success "SUCCESS: $($svcInfo.name) - $($envInfo.name) started!"
     } else {
-        Write-Error "❌ $($envInfo.name) ortamı başlatılırken hata oluştu!"
+        Write-ErrorMessage "ERROR: Failed to start $($svcInfo.name) - $($envInfo.name)!"
     }
 }
 
 function Stop-Environment {
-    param([string]$env)
+    param(
+        [string]$env,
+        [string]$svc
+    )
     
     $envInfo = $environments[$env]
-    $envPath = $envInfo.path
+    $svcInfo = $services[$svc]
+    $fullPath = "$($svcInfo.path)/$($envInfo.path)"
+    $projectName = "$($svc)_$($env)"
     
-    Write-Info "🛑 $($envInfo.name) ortamı durduruluyor..."
+    Write-Info "$($svcInfo.icon) $($svcInfo.name) - $($envInfo.name) stopping..."
     
-    Push-Location $envPath
-    docker-compose down
+    if (-not (Test-Path "$fullPath/docker-compose.yml")) {
+        Write-Warning "WARNING: $fullPath not found, skipping..."
+        return
+    }
+    
+    Push-Location $fullPath
+    docker-compose -p $projectName down --remove-orphans
     Pop-Location
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Success "✅ $($envInfo.name) ortamı başarıyla durduruldu!"
+        Write-Success "SUCCESS: $($svcInfo.name) - $($envInfo.name) stopped!"
     } else {
-        Write-Error "❌ $($envInfo.name) ortamı durdurulurken hata oluştu!"
+        Write-ErrorMessage "ERROR: Failed to stop $($svcInfo.name) - $($envInfo.name)!"
     }
 }
 
 function Restart-Environment {
-    param([string]$env)
+    param(
+        [string]$env,
+        [string]$svc
+    )
     
-    Stop-Environment $env
+    Stop-Environment $env $svc
     Start-Sleep -Seconds 2
-    Start-Environment $env
+    Start-Environment $env $svc
 }
 
 function Show-Logs {
-    param([string]$env)
+    param(
+        [string]$env,
+        [string]$svc
+    )
     
     $envInfo = $environments[$env]
-    $envPath = $envInfo.path
+    $svcInfo = $services[$svc]
+    $fullPath = "$($svcInfo.path)/$($envInfo.path)"
+    $projectName = "$($svc)_$($env)"
     
-    Write-Info "📋 $($envInfo.name) ortamı logları gösteriliyor..."
+    Write-Info "$($svcInfo.icon) $($svcInfo.name) - $($envInfo.name) logs..."
     
-    Push-Location $envPath
-    docker-compose logs -f
+    if (-not (Test-Path "$fullPath/docker-compose.yml")) {
+        Write-ErrorMessage "ERROR: $fullPath not found!"
+        return
+    }
+    
+    Push-Location $fullPath
+    docker-compose -p $projectName logs -f
     Pop-Location
 }
 
 function Show-Status {
-    Write-Info "📊 Container durumları:"
+    param([string]$svc)
+    
+    Write-Info "Container Status:"
     Write-Host ""
     
-    foreach ($env in @("dev", "test", "prod")) {
-        $envInfo = $environments[$env]
-        Write-Host "=== $($envInfo.name) ===" -ForegroundColor Yellow
+    $servicesToCheck = if ($svc -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring") } else { @($svc) }
+    
+    foreach ($service in $servicesToCheck) {
+        $svcInfo = $services[$service]
+        Write-Host "=== $($svcInfo.icon) $($svcInfo.name) ===" -ForegroundColor Magenta
         
-        Push-Location $envInfo.path
-        docker-compose ps
-        Pop-Location
+        foreach ($env in @("dev", "test", "prod")) {
+            $envInfo = $environments[$env]
+            $fullPath = "$($svcInfo.path)/$($envInfo.path)"
+            
+            Write-Host "  $($envInfo.name):" -ForegroundColor Yellow
+            
+            if (Test-Path "$fullPath/docker-compose.yml") {
+                $projectName = "$($service)_$($env)"
+                Push-Location $fullPath
+                docker-compose -p $projectName ps
+                Pop-Location
+            } else {
+                Write-Host "    (Not configured)" -ForegroundColor DarkGray
+            }
+        }
         Write-Host ""
     }
 }
 
 function Clean-Environment {
-    param([string]$env)
+    param(
+        [string]$env,
+        [string]$svc
+    )
     
     $envInfo = $environments[$env]
-    $envPath = $envInfo.path
+    $svcInfo = $services[$svc]
+    $fullPath = "$($svcInfo.path)/$($envInfo.path)"
+    $projectName = "$($svc)_$($env)"
     
-    Write-Warning "⚠️  $($envInfo.name) ortamının TÜM VERİLERİ silinecek!"
-    $confirm = Read-Host "Devam etmek istiyor musunuz? (yes/no)"
+    Write-Warning "WARNING: ALL DATA in $($svcInfo.name) - $($envInfo.name) will be deleted!"
+    $confirm = Read-Host "Do you want to continue? (Y/N)"
     
-    if ($confirm -eq "yes") {
-        Write-Info "🗑️  $($envInfo.name) ortamı temizleniyor..."
+    if ($confirm -match '^[Yy](es)?$') {
+        Write-Info "Cleaning $($svcInfo.name) - $($envInfo.name)..."
         
-        Push-Location $envPath
-        docker-compose down -v
-        Pop-Location
-        
-        Write-Success "✅ $($envInfo.name) ortamı temizlendi!"
+        if (Test-Path "$fullPath/docker-compose.yml") {
+            Push-Location $fullPath
+            docker-compose -p $projectName down -v --remove-orphans
+            Pop-Location
+            
+            Write-Success "SUCCESS: $($svcInfo.name) - $($envInfo.name) cleaned!"
+        } else {
+            Write-Warning "WARNING: $fullPath not found!"
+        }
     } else {
-        Write-Info "İşlem iptal edildi."
+        Write-Info "Operation cancelled."
     }
 }
 
-# Ana mantık
-Write-Info "═══════════════════════════════════════"
-Write-Info "  PostgreSQL Docker Ortam Yöneticisi"
-Write-Info "═══════════════════════════════════════"
+# Main logic
+Write-Info "======================================="
+Write-Info "  Multi-Service Docker Manager"
+Write-Info "  PG + Redis + RabbitMQ + ES + Mongo + Mon"
+Write-Info "======================================="
 Write-Host ""
 
-if ($Environment -eq "all") {
-    foreach ($env in @("dev", "test", "prod")) {
-        switch ($Action) {
-            "start"   { Start-Environment $env }
-            "stop"    { Stop-Environment $env }
-            "restart" { Restart-Environment $env }
-            "clean"   { Clean-Environment $env }
-        }
+# Determine service list
+$servicesToProcess = if ($Service -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring") } else { @($Service) }
+
+# Execute operations
+foreach ($svc in $servicesToProcess) {
+    switch ($Action) {
+        "start"   { Start-Environment $Environment $svc }
+        "stop"    { Stop-Environment $Environment $svc }
+        "restart" { Restart-Environment $Environment $svc }
+        "logs"    { Show-Logs $Environment $svc }
+        "clean"   { Clean-Environment $Environment $svc }
+    }
+    
+    if ($servicesToProcess.Count -gt 1) {
         Write-Host ""
     }
-    
-    if ($Action -eq "status") {
-        Show-Status
-    }
-} else {
-    switch ($Action) {
-        "start"   { Start-Environment $Environment }
-        "stop"    { Stop-Environment $Environment }
-        "restart" { Restart-Environment $Environment }
-        "logs"    { Show-Logs $Environment }
-        "status"  { Show-Status }
-        "clean"   { Clean-Environment $Environment }
-    }
+}
+
+# Status special handling
+if ($Action -eq "status") {
+    Show-Status $Service
 }
 
 Write-Host ""
-Write-Info "═══════════════════════════════════════"
+Write-Info "======================================="

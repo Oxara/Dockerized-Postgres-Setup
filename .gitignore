@@ -1,4 +1,18 @@
-# Environment dosyaları
+# ============================================
+# ⚠️  ÖNEMLİ GÜVENLİK UYARISI ⚠️
+# ============================================
+# Bu proje .env.example şablon dosyaları içeriyor.
+#
+# KULLANIM:
+# 1. Her servis/ortam için .env.example dosyasını .env olarak kopyalayın:
+#    Copy-Item .env.example .env
+# 2. .env içindeki şifreleri güçlü değerlerle güncelleyin
+# 3. .env dosyaları .gitignore ile zaten korunuyor — Git'e yüklenmiyor
+#
+# ============================================
+
+# Environment dosyaları (gerçek .env dosyaları Git'e yüklenmez)
+# .env.example dosyaları şablon olarak repo'da tutulur
 .env
 .env.local
 .env.*.local

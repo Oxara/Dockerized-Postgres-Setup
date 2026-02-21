@@ -1,671 +1,591 @@
-# PostgreSQL Multi-Environment Docker Setup
+# Multi-Service Docker Environment Setup
 
-Modern, best-practice yaklaşımıyla hazırlanmış multi-environment PostgreSQL + pgAdmin + Grafana kurulumu.
+Modern, best-practice yaklaşımıyla hazırlanmış multi-environment **PostgreSQL** + **Redis** + **RabbitMQ** + **Elasticsearch** + **MongoDB** + **Monitoring (Prometheus + Grafana)** Docker kurulumu.
+
+> ## ⚠️ ÖNEMLİ GÜVENLİK UYARISI
+> 
+> Bu proje **ÖRNEK AMAÇLI** `.env` dosyaları içermektedir. Bu dosyalar eğitim ve hızlı başlangıç için tasarlanmıştır.
+> 
+> **GERÇEK PROJENIZDE MUTLAKA YAPMANIZ GEREKENLER:**
+> 
+> 1. **`.gitignore` dosyasını güncelleyin**: `.env` satırlarının yorumunu kaldırarak `.env` dosyalarını Git'e eklemeyin
+> 2. **Tüm şifreleri değiştirin**: `.env` dosyalarındaki tüm şifreler güçlü, unique şifreler ile değiştirilmelidir
+> 3. **Production'da ekstra önlemler**: Güvenlik duvarı, SSL/TLS, network izolasyonu ekleyin
+> 4. **Düzenli güvenlik güncellemeleri**: Docker image'larını güncel tutun
+> 
+> **Bu projeyi olduğu gibi production'da kullanmayın!** 🔒
+
+## 🎯 Genel Bakış
+
+Bu proje, PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB ve Monitoring (Prometheus + Grafana) servislerini birden fazla ortamda (Development, Test, Production) kolayca yönetmenize olanak sağlar. Her servis için ayrı yönetim arayüzü entegre edilmiştir.
+
+### 📦 İçerik
+
+- **PostgreSQL Stack**: PostgreSQL + pgAdmin
+- **Redis Stack**: Redis + RedisInsight
+- **RabbitMQ Stack**: RabbitMQ + Management UI
+- **Elasticsearch Stack**: Elasticsearch + Kibana
+- **MongoDB Stack**: MongoDB + Mongo Express
+- **Monitoring Stack**: Prometheus + Grafana
+- **Tek Komutla Yönetim**: Tüm servisleri veya seçtiğiniz servisi başlatın/durdurun
+- **Multi-Environment**: Dev, Test, Prod ortamları tamamen izole
 
 ## 📁 Klasör Yapısı
 
 ```
-postgres-docker/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   ├── .env
-│   │   └── grafana-datasources.yml
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   ├── .env
-│   │   └── grafana-datasources.yml
-│   ├── prod/
-│   │   ├── docker-compose.yml
-│   │   ├── .env
-│   │   └── grafana-datasources.yml
-│   └── .env.example
-├── manage.ps1              # Windows yönetim scripti
-├── manage.sh               # Linux/Mac yönetim scripti
-├── .gitignore
-└── README.md
-```
-
-### 🔍 Klasör Yapısı Açıklaması
-
-**Her ortam tamamen izole şekilde kendi klasöründe çalışır:**
-
-- **`environments/dev/`** - Development (Geliştirme) ortamı
-  - `docker-compose.yml` - Dev için compose yapılandırması
-  - `.env` - Dev ortam değişkenleri (port: 5432, 5050, 3000)
-  - `grafana-datasources.yml` - Grafana otomatik datasource yapılandırması
-
-- **`environments/test/`** - Test ortamı
-  - `docker-compose.yml` - Test için compose yapılandırması
-  - `.env` - Test ortam değişkenleri (port: 5433, 5051, 3001)
-  - `grafana-datasources.yml` - Grafana otomatik datasource yapılandırması
-
-- **`environments/prod/`** - Production (Canlı) ortamı
-  - `docker-compose.yml` - Prod için compose yapılandırması
-  - `.env` - Prod ortam değişkenleri (port: 5434, 5052, 3002)
-  - `grafana-datasources.yml` - Grafana otomatik datasource yapılandırması
-
-- **`environments/.env.example`** - Şablon dosya (yeni ortam eklemek için)
-
-**Yönetim Dosyaları:**
-- `manage.ps1` - Windows için otomatik yönetim scripti
-- `manage.sh` - Linux/Mac için otomatik yönetim scripti
-
-### 📝 Yeni Ortam Ekleme
-
-Yeni bir ortam eklemek isterseniz:
-
-```bash
-# 1. Yeni klasör oluştur
-mkdir environments/staging
-
-# 2. .env.example'ı kopyala
-cp environments/.env.example environments/staging/.env
-
-# 3. docker-compose.yml'yi başka ortamdan kopyala
-cp environments/dev/docker-compose.yml environments/staging/docker-compose.yml
-
-# 4. Değerleri düzenle (.env ve docker-compose.yml)
-# - Container isimleri: postgres_staging, pgadmin_staging, grafana_staging
-# - Portlar: 5435, 5053, 3003 (benzersiz olmalı)
-# - Volume ve network isimleri: postgres_staging_*, postgres_staging_network
-
-# 5. Başlat
-cd environments/staging
-docker-compose up -d
+database-stack/
+├── postgres/
+│   └── environments/
+│       ├── dev/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       ├── test/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       └── prod/
+│           ├── docker-compose.yml
+│           └── .env
+├── redis/
+│   └── environments/
+│       ├── dev/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       ├── test/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       └── prod/
+│           ├── docker-compose.yml
+│           └── .env
+├── rabbitmq/
+│   └── environments/
+│       ├── dev/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       ├── test/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       └── prod/
+│           ├── docker-compose.yml
+│           └── .env
+├── elasticsearch/
+│   └── environments/
+│       ├── dev/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       ├── test/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       └── prod/
+│           ├── docker-compose.yml
+│           └── .env
+├── mongodb/
+│   └── environments/
+│       ├── dev/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       ├── test/
+│       │   ├── docker-compose.yml
+│       │   └── .env
+│       └── prod/
+│           ├── docker-compose.yml
+│           └── .env
+├── monitoring/
+│   └── environments/
+│       ├── dev/
+│       │   ├── docker-compose.yml
+│       │   ├── prometheus.yml
+│       │   └── .env
+│       ├── test/
+│       │   ├── docker-compose.yml
+│       │   ├── prometheus.yml
+│       │   └── .env
+│       └── prod/
+│           ├── docker-compose.yml
+│           ├── prometheus.yml
+│           └── .env
+├── manage.ps1                # Windows yönetim scripti
+├── SECURITY-WARNING.txt      # ⚠️ ÖNEMLI GÜVENLİK TALİMATLARI
+├── .gitignore                # Git ignore ayarları (güvenlik uyarıları içerir)
+├── README.md                 # Bu dosya
+├── README-PostgreSQL.md      # PostgreSQL detaylı dokümantasyon
+├── README-Redis.md           # Redis detaylı dokümantasyon
+├── README-RabbitMQ.md        # RabbitMQ detaylı dokümantasyon
+├── README-Elasticsearch.md   # Elasticsearch detaylı dokümantasyon
+├── README-MongoDB.md         # MongoDB detaylı dokümantasyon
+└── README-Monitoring.md      # Monitoring detaylı dokümantasyon
 ```
 
 ## ✨ Özellikler
 
+- ✅ **Multi-Service Support**: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB ve Monitoring aynı anda veya ayrı ayrı
 - ✅ **Tamamen İzole Ortamlar**: Her ortam kendi klasöründe
-- ✅ **Temiz Yapı**: Her ortam için ayrı docker-compose.yml
-- ✅ **Güvenli**: .env dosyaları Git'e yüklenmiyor
-- ✅ **Kolay Yönetim**: Hazır scriptler ile tek komutla yönetim
-- ✅ **Çakışma Yok**: Her ortam farklı portlarda çalışır
+- ✅ **Kolay Yönetim**: Tek komutla tüm servisleri kontrol edin
+- ✅ **Çakışma Yok**: Her ortam ve servis farklı portlarda
 - ✅ **Best Practices**: Docker ve DevOps standartlarına uygun
-- ✅ **Görselİzleme**: Grafana ile PostgreSQL metrik ve veri görselleştirme
-- ✅ **Otomatik Yapılandırma**: Grafana datasource'ları otomatik yüklenirken
+- ✅ **Güvenli**: .env dosyaları Git'e yüklenmiyor
+- ✅ **Kapsamlı Dokümantasyon**: Her servis için detaylı README
 
 ## 🚀 Hızlı Başlangıç
 
-### 1️⃣ Kurulum
+### 1️⃣ İlk Kurulum: `.env` Dosyalarını Oluşturun
 
-Proje zaten hazır! Her ortamın .env dosyası şablon değerlerle oluşturulmuş durumda.
-
-**Eğer .env dosyalarını oluşturmanız gerekiyorsa:**
-
-```bash
-# Her ortam için .env.example'dan kopyala
-cp environments/.env.example environments/dev/.env
-cp environments/.env.example environments/test/.env
-cp environments/.env.example environments/prod/.env
-```
-
-**Her ortam için portları ayarlayın:**
-
-- **Dev:** `POSTGRES_PORT=5432`, `PGADMIN_PORT=5050`, `GRAFANA_PORT=3000`
-- **Test:** `POSTGRES_PORT=5433`, `PGADMIN_PORT=5051`, `GRAFANA_PORT=3001`
-- **Prod:** `POSTGRES_PORT=5434`, `PGADMIN_PORT=5052`, `GRAFANA_PORT=3002`
-
-**Güvenlik için şifreleri değiştirin:**
-
-```bash
-# environments/dev/.env
-POSTGRES_PASSWORD=güçlü_dev_şifresi
-PGADMIN_PASSWORD=güçlü_pgadmin_şifresi
-GRAFANA_ADMIN_PASSWORD=güçlü_grafana_şifresi
-
-# environments/test/.env
-POSTGRES_PASSWORD=güçlü_test_şifresi
-PGADMIN_PASSWORD=güçlü_pgadmin_şifresi
-GRAFANA_ADMIN_PASSWORD=güçlü_grafana_şifresi
-
-# environments/prod/.env
-POSTGRES_PASSWORD=ÇOK_GÜÇLÜ_PROD_ŞİFRESİ_123!@#
-PGADMIN_PASSWORD=ÇOK_GÜÇLÜ_PGADMIN_ŞİFRESİ_456!@#
-GRAFANA_ADMIN_PASSWORD=ÇOK_GÜÇLÜ_GRAFANA_ŞİFRESİ_789!@#
-```
-
-> 💡 **İpucu:** `environments/.env.example` dosyasında detaylı açıklamalar ve kurulum adımları bulunmaktadır.
-
-### 2️⃣ Ortamı Başlatma
-
-**Yönetim Scriptleri (Önerilen):**
+Her servis için `.env.example` şablonlarından `.env` dosyaları oluşturun:
 
 ```powershell
-# Windows
-.\manage.ps1 start dev
-
-# Linux/Mac
-./manage.sh start dev
+# Tüm servislerin .env.example dosyalarından .env oluştur
+$services = @("postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring")
+$envs     = @("dev","test","prod")
+foreach ($svc in $services) {
+    foreach ($env in $envs) {
+        $src = "$svc\environments\$env\.env.example"
+        $dst = "$svc\environments\$env\.env"
+        if (Test-Path $src) { Copy-Item $src $dst }
+    }
+}
 ```
 
-**Manuel Yol:**
+> 💡 `.env` dosyaları `.gitignore` tarafından korunuyor — Git'e yüklenmez.
 
-```bash
-# Development ortamını başlat
-cd environments/dev
-docker-compose up -d
+### ⚠️ Şifreleri Güncelleyin
 
-# veya kök dizinden
-docker-compose -f environments/dev/docker-compose.yml up -d
-```
+**Gerçek kullanım öncesi mutlaka yapın:**
 
-### 3️⃣ Erişim
+1. **Her servisteki `.env` dosyalarını düzenleyin** ve şifreleri güçlü değerlerle değiştirin
+   ```powershell
+   # Her serviste 3 ortam var (dev, test, prod) → toplam 18 .env dosyası
+   code postgres\environments\prod\.env
+   ```
 
-| Ortam | PostgreSQL | pgAdmin | Grafana |
-|-------|-----------|---------|----------|
-| **Dev** | `localhost:5432` | http://localhost:5050 | http://localhost:3000 |
-| **Test** | `localhost:5433` | http://localhost:5051 | http://localhost:3001 |
-| **Prod** | `localhost:5434` | http://localhost:5052 | http://localhost:3002 |
+2. **`SECURITY-WARNING.txt` dosyasını okuyun**
 
-## 📖 Kullanım Kılavuzu
+### 1️⃣ Gereksinimler
 
-### Yönetim Scriptleri
+- Docker Desktop (Windows)
+- Docker Compose
+- PowerShell 5.1 veya üzeri
 
-```bash
-# BAŞLATMA
-.\manage.ps1 start dev      # Development başlat
-.\manage.ps1 start test     # Test başlat
-.\manage.ps1 start prod     # Production başlat
-.\manage.ps1 start all      # Tümünü başlat
+### 2️⃣ Temel Komutlar
 
-# DURDURMA
-.\manage.ps1 stop dev       # Development durdur
-.\manage.ps1 stop all       # Tümünü durdur
-
-# YENİDEN BAŞLATMA
-.\manage.ps1 restart dev    # Development yeniden başlat
-
-# LOGLARI İZLEME
-.\manage.ps1 logs dev       # Development logları (Ctrl+C ile çık)
-
-# DURUM KONTROLÜ
-.\manage.ps1 status all     # Tüm ortamların durumu
-
-# TEMİZLEME (VERİLER SİLİNİR!)
-.\manage.ps1 clean dev      # Development ortamını temizle
-```
-
-**Not:** Windows'ta ilk kullanımda şu komutu çalıştırmanız gerekebilir:
+**Format:**
 ```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\manage.ps1 [komut] [ortam] [servis]
+
+# Örnek kullanım
+.\manage.ps1 start dev postgres
 ```
 
-### Manuel Docker Compose Kullanımı
+**Parametreler:**
+- **Komut**: `start`, `stop`, `restart`, `logs`, `status`, `clean`
+- **Ortam**: `dev`, `test`, `prod`
+- **Servis**: `postgres`, `redis`, `rabbitmq`, `elasticsearch`, `mongodb`, `monitoring`, `all`
 
-Her ortam kendi klasöründe bağımsız çalışır:
+### 3️⃣ Örnek Kullanımlar
 
-```bash
-# Development ortamında
-cd environments/dev
-docker-compose up -d        # Başlat
-docker-compose down         # Durdur
-docker-compose logs -f      # Logları izle
-docker-compose ps           # Durum
-docker-compose restart      # Yeniden başlat
-docker-compose down -v      # Verilerle birlikte sil
+```powershell
+# 🐘 Sadece PostgreSQL başlat (Development)
+.\manage.ps1 start dev postgres
 
-# Test ortamında
-cd environments/test
-docker-compose up -d
+# 🔴 Sadece Redis başlat (Development)
+.\manage.ps1 start dev redis
 
-# Production ortamında
-cd environments/prod
-docker-compose up -d
+# 🐰 Sadece RabbitMQ başlat (Development)
+.\manage.ps1 start dev rabbitmq
+
+# 🔍 Sadece Elasticsearch başlat (Development)
+.\manage.ps1 start dev elasticsearch
+
+# 🍃 Sadece MongoDB başlat (Development)
+.\manage.ps1 start dev mongodb
+
+# 📊 Sadece Monitoring başlat (Development)
+.\manage.ps1 start dev monitoring
+
+# 🎯 Development ortamındaki tüm servisleri başlat
+.\manage.ps1 start dev all
+
+# 📊 Production ortamındaki tüm servislerin durumunu görüntüle
+.\manage.ps1 status prod all
+
+# 🛑 Test ortamındaki Redis'i durdur
+.\manage.ps1 stop test redis
+
+# 🔄 Production'daki tüm servisleri yeniden başlat
+.\manage.ps1 restart prod all
+
+# 📋 Development Redis loglarını izle
+.\manage.ps1 logs dev redis
+
+# 🔁 Ortamlar arası geçiş (dev → test → prod)
+.\manage.ps1 stop dev all
+.\manage.ps1 start test all
+
+# 🗑️ Test ortamındaki PostgreSQL'i temizle (veriler silinir!)
+.\manage.ps1 clean test postgres
 ```
 
-**Kök dizinden çalıştırma:**
+## 📊 Port Dağılımı
 
-```bash
-# Development
-docker-compose -f environments/dev/docker-compose.yml up -d
-docker-compose -f environments/dev/docker-compose.yml down
+### PostgreSQL Stack
 
-# Test
-docker-compose -f environments/test/docker-compose.yml up -d
-docker-compose -f environments/test/docker-compose.yml down
+| Ortam | PostgreSQL | pgAdmin |
+|-------|-----------|----------|
+| **Dev** | 5432 | 5050 |
+| **Test** | 5433 | 5051 |
+| **Prod** | 5434 | 5052 |
 
-# Production
-docker-compose -f environments/prod/docker-compose.yml up -d
-docker-compose -f environments/prod/docker-compose.yml down
-```
+### Redis Stack
+
+| Ortam | Redis | RedisInsight |
+|-------|-------|-------------|
+| **Dev** | 6379 | 8001 |
+| **Test** | 6380 | 8002 |
+| **Prod** | 6381 | 8003 |
+
+### RabbitMQ Stack
+
+| Ortam | AMQP | Management UI |
+|-------|------|---------------|
+| **Dev** | 5672 | 15672 |
+| **Test** | 5673 | 15673 |
+| **Prod** | 5674 | 15674 |
+
+### Elasticsearch Stack
+
+| Ortam | Elasticsearch | Kibana |
+|-------|---------------|--------|
+| **Dev** | 9200 | 5601 |
+| **Test** | 9201 | 5602 |
+| **Prod** | 9202 | 5603 |
+
+### MongoDB Stack
+
+| Ortam | MongoDB | Mongo Express |
+|-------|---------|---------------|
+| **Dev** | 27017 | 8081 |
+| **Test** | 27018 | 8082 |
+| **Prod** | 27019 | 8083 |
+
+### Monitoring Stack
+
+| Ortam | Prometheus | Grafana |
+|-------|------------|---------|
+| **Dev** | 9090 | 3000 |
+| **Test** | 9091 | 3001 |
+| **Prod** | 9092 | 3002 |
 
 ## 🔧 Yapılandırma
 
-Her ortamın kendi `.env` dosyası vardır:
+Her servisin her ortamı için ayrı `.env` dosyası bulunmaktadır.  
+`.env.example` şablon dosyalarından kopyalanarak oluşturulur (bkz. Hızlı Başlangıç):
 
-**environments/dev/.env:**
-```env
-# PostgreSQL Settings
-POSTGRES_USER=postgres_dev_user
-POSTGRES_PASSWORD=güçlü_şifre_buraya
-POSTGRES_DB=postgres_dev_db
-POSTGRES_PORT=5432
+- `postgres/environments/dev/.env`
+- `postgres/environments/test/.env`
+- `postgres/environments/prod/.env`
+- `redis/environments/dev/.env`
+- `redis/environments/test/.env`
+- `redis/environments/prod/.env`
+- `rabbitmq/environments/dev/.env`
+- `rabbitmq/environments/test/.env`
+- `rabbitmq/environments/prod/.env`
+- `elasticsearch/environments/dev/.env`
+- `elasticsearch/environments/test/.env`
+- `elasticsearch/environments/prod/.env`
 
-# pgAdmin Settings
-PGADMIN_EMAIL=admin.dev@example.com
-PGADMIN_PASSWORD=pgadmin_şifresi
-PGADMIN_PORT=5050
+**Önemli:** Production ortamları için mutlaka güçlü şifreler kullanın!
 
-# Grafana Settings
-GRAFANA_PORT=3000
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=grafana_şifresi
+## 📖 Detaylı Dokümantasyon
+
+Her servis için kapsamlı dokümantasyon mevcuttur:
+
+### [📘 PostgreSQL Dokümantasyonu](README-PostgreSQL.md)
+- PostgreSQL + pgAdmin kurulumu
+- Bağlantı örnekleri (.NET/C#)
+- Backup ve restore işlemleri
+- Sorun giderme rehberi
+- Güvenlik best practices
+
+### [📕 Redis Dokümantasyonu](README-Redis.md)
+- Redis + RedisInsight kurulumu
+- Redis komutları ve kullanımları
+- Cache senaryoları
+- AOF persistence ayarları
+- Performance optimizasyonu
+
+### [📙 RabbitMQ Dokümantasyonu](README-RabbitMQ.md)
+- RabbitMQ + Management UI kurulumu
+- Message queue kullanımı
+- Exchange ve queue yönetimi
+- Bağlantı örnekleri (.NET/C#)
+- Production best practices
+
+### [📗 Elasticsearch Dokümantasyonu](README-Elasticsearch.md)
+- Elasticsearch + Kibana kurulumu
+- REST API kullanımı
+- Index ve mapping yönetimi
+- Arama sorguları (Query DSL)
+- Kibana Dev Tools ve dashboard'lar
+- Aggregation ve analytics örnekleri
+
+## 💡 Kullanım Senaryoları
+
+### Senaryo 1: Sadece PostgreSQL ile Çalışma
+
+```powershell
+# Development ortamını başlat
+.\manage.ps1 start dev postgres
+
+# pgAdmin'e bağlan: http://localhost:5050
+
+# İşin bitince durdur
+.\manage.ps1 stop dev postgres
 ```
 
-### Port Yapılandırması
+### Senaryo 2: Sadece Redis ile Çalışma
 
-Default portlar:
-- **Dev**: PostgreSQL 5432, pgAdmin 5050, Grafana 3000
-- **Test**: PostgreSQL 5433, pgAdmin 5051, Grafana 3001
-- **Prod**: PostgreSQL 5434, pgAdmin 5052, Grafana 3002
+```powershell
+# Development ortamını başlat
+.\manage.ps1 start dev redis
 
-Port değiştirmek için ilgili ortamın `.env` dosyasını düzenleyin.
+# RedisInsight'a bağlan: http://localhost:8001
 
-## 🔌 Veritabanına Bağlanma
-
-### pgAdmin'den Bağlanma
-
-1. pgAdmin'e giriş yapın (http://localhost:5050 - dev için)
-2. "Add New Server" tıklayın
-3. **General** sekmesi:
-   - Name: `Development` (veya istediğiniz isim)
-4. **Connection** sekmesi:
-   - Host: `postgres` (container adı - aynı network'te)
-   - Port: `5432` (container içi port)
-   - Username: `.env` dosyasındaki `POSTGRES_USER`
-   - Password: `.env` dosyasındaki `POSTGRES_PASSWORD`
-
-### Uygulama veya Harici Araçlardan Bağlanma
-
-**Development:**
-```
-Host: localhost
-Port: 5432
-User: postgres_dev_user
-Password: (environments/dev/.env içinde)
-Database: postgres_dev_db
+# İşin bitince durdur
+.\manage.ps1 stop dev redis
 ```
 
-**Test:**
-```
-Host: localhost
-Port: 5433
-User: postgres_test_user
-Password: (environments/test/.env içinde)
-Database: postgres_test_db
-```
+### Senaryo 3: Sadece RabbitMQ ile Çalışma
 
-**Production:**
-```
-Host: localhost
-Port: 5434
-User: postgres_prod_user
-Password: (environments/prod/.env içinde)
-Database: postgres_prod_db
+```powershell
+# Development ortamını başlat
+.\manage.ps1 start dev rabbitmq
+
+# Management UI'a bağlan: http://localhost:15672
+
+# İşin bitince durdur
+.\manage.ps1 stop dev rabbitmq
 ```
 
-**Python örneği:**
-```python
-import psycopg2
+### Senaryo 4: Tüm Servisleri Birlikte Kullanma
 
-conn = psycopg2.connect(
-    host="localhost",
-    port=5432,
-    database="postgres_dev_db",
-    user="postgres_dev_user",
-    password="your_password"
-)
+```powershell
+# Tümünü başlat
+.\manage.ps1 start dev all
+
+# PostgreSQL: localhost:5432
+# pgAdmin: http://localhost:5050
+# Redis: localhost:6379
+# RedisInsight: http://localhost:8001
+# RabbitMQ AMQP: localhost:5672
+# RabbitMQ Management: http://localhost:15672
+# Elasticsearch: localhost:9200
+# Kibana: http://localhost:5601
+# MongoDB: localhost:27017
+# Mongo Express: http://localhost:8081
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000
+
+# Durumu kontrol et
+.\manage.ps1 status dev all
+
+# Tümünü durdur
+.\manage.ps1 stop dev all
 ```
 
-**Node.js örneği:**
-```javascript
-const { Pool } = require('pg');
+### Senaryo 5: Sadece Elasticsearch ile Çalışma
 
-const pool = new Pool({
-  host: 'localhost',
-  port: 5432,
-  database: 'postgres_dev_db',
-  user: 'postgres_dev_user',
-  password: 'your_password'
-});
+```powershell
+# Development Elasticsearch başlat
+.\manage.ps1 start dev elasticsearch
+
+# Kibana'ya bağlan: http://localhost:5601
+# API'ye erişim: http://localhost:9200
+
+# Index oluştur ve arama yap
+Invoke-RestMethod -Uri "http://localhost:9200/_cat/indices?v" -Method Get -Credential (Get-Credential)
+
+# İşin bitince durdur
+.\manage.ps1 stop dev elasticsearch
 ```
 
-### Grafana'dan Bağlanma
+### Senaryo 6: Test Ortamında Çalışma
 
-Grafana otomatik olarak PostgreSQL'e bağlanacak şekilde yapılandırılmıştır.
+```powershell
+# Test ortamında tüm servisleri başlat
+.\manage.ps1 start test all
 
-1. **Grafana'ya Giriş Yapın:**
-   - Development: http://localhost:3000
-   - Test: http://localhost:3001
-   - Production: http://localhost:3002
-   - Username: `admin` (veya .env'deki `GRAFANA_ADMIN_USER`)
-   - Password: `.env` dosyasındaki `GRAFANA_ADMIN_PASSWORD`
+# Test portları kullanılır:
+# PostgreSQL: localhost:5433
+# Redis: localhost:6380
+# RabbitMQ: localhost:5673
+# Elasticsearch: localhost:9201
+# vb.
 
-2. **PostgreSQL Datasource Otomatik Yüklenir:**
-   - Grafana başladığında `grafana-datasources.yml` dosyası otomatik olarak yüklenir
-   - PostgreSQL bağlantısı hazır durumda olacaktır
-   - Sol menüden **Connections** → **Data sources** → **PostgreSQL** seçerek test edebilirsiniz
-
-3. **Dashboard Oluşturma:**
-   - Sol menüden **Dashboards** → **New Dashboard** tıklayın
-   - **Add visualization** seçin
-   - PostgreSQL datasource'u seçin
-   - SQL sorguları yazarak verilerinizi görselleştirin
-
-**Örnek Grafana SQL Sorgusu:**
-```sql
--- Veritabanı büyüklüğünü göster
-SELECT 
-  pg_database.datname,
-  pg_size_pretty(pg_database_size(pg_database.datname)) AS size
-FROM pg_database
-ORDER BY pg_database_size(pg_database.datname) DESC;
-
--- Aktif bağlantıları göster
-SELECT count(*) as connections, datname 
-FROM pg_stat_activity 
-GROUP BY datname;
+# Bitirince temizle
+.\manage.ps1 clean test all
 ```
 
-## 🛡️ Güvenlik En İyi Pratikleri
+## 🛡️ Güvenlik Notları
 
-### 1. Şifre Güvenliği
-```bash
-# ❌ YANLIŞ - Zayıf şifre
-POSTGRES_PASSWORD=123456
+### Development/Test Ortamları
+- Basit şifreler kullanılabilir
+- Localhost erişimi yeterli
+- Debug modları açık olabilir
 
-# ✅ DOĞRU - Güçlü şifre
-POSTGRES_PASSWORD=Kx9&mP2$vL8@qR5#wN3!
+### Production Ortamı
+- **ÖNEMLİ**: `.env` dosyalarındaki tüm şifreleri değiştirin!
+- Güçlü, benzersiz şifreler kullanın (min 20 karakter, özel karakterler)
+- Firewall kurallarını yapılandırın
+- SSL/TLS kullanımını etkinleştirin
+- Port erişimlerini kısıtlayın
+- Düzenli backup alın
+- Log monitoring ekleyin
+
+## 📋 Yönetim Komutları Özeti
+
+### Başlatma
+```powershell
+.\manage.ps1 start <env> <service>
+# Örnek: .\manage.ps1 start dev postgres
 ```
 
-### 2. Environment Ayrımı
-- Development ve Test için basit şifreler kullanabilirsiniz
-- Production için **mutlaka** güçlü, benzersiz şifreler kullanın
-- Production şifrelerini asla development ile aynı yapmayın
-
-### 3. Git Güvenliği
-`.gitignore` dosyası `.env` dosyalarını otomatik olarak hariç tutar:
-```gitignore
-environments/*/.env
+### Durdurma
+```powershell
+.\manage.ps1 stop <env> <service>
+# Örnek: .\manage.ps1 stop dev all
 ```
 
-**Kontrol edin:**
-```bash
-git status  # .env dosyaları listede olmamalı
+### Yeniden Başlatma
+```powershell
+.\manage.ps1 restart <env> <service>
+# Örnek: .\manage.ps1 restart test redis
 ```
 
-### 4. Şifre Yönetimi
-- Şifreleri bir şifre yöneticisinde saklayın (1Password, LastPass, vb.)
-- Ekip üyeleriyle güvenli kanallardan paylaşın (Slack değil!)
-- Production şifrelerini sık sık değiştirin
-
-## 📊 İzleme ve Bakım
-
-### Container Durumunu Kontrol Etme
-
-**Script ile:**
-```bash
-.\manage.ps1 status all
+### Log İzleme
+```powershell
+.\manage.ps1 logs <env> <service>
+# Örnek: .\manage.ps1 logs dev postgres
+# Not: 'all' ortamı ile kullanılamaz
 ```
 
-**Manuel:**
-```bash
-# Tüm containerlar
-docker ps
-
-# PostgreSQL containerları
-docker ps | grep postgres
-
-# Belirli bir ortam
-cd environments/dev
-docker-compose ps
+### Durum Kontrolü
+```powershell
+.\manage.ps1 status <env> <service>
+# Örnek: .\manage.ps1 status dev all
 ```
 
-### Disk Kullanımı
-```bash
-# Volume'leri listele
-docker volume ls | grep postgres
-
-# Volume boyutunu kontrol et
-docker system df -v
+### Temizleme (Veriler Silinir!)
+```powershell
+.\manage.ps1 clean <env> <service>
+# Örnek: .\manage.ps1 clean test postgres
 ```
 
-### Logları İnceleme
+## 🔍 Sorun Giderme
 
-**Script ile:**
-```bash
-# Canlı log izleme
-.\manage.ps1 logs dev
-```
+### Port Çakışması
 
-**Manuel:**
-```bash
-# Development ortamı
-cd environments/dev
-docker-compose logs -f
-
-# Son 100 satır
-docker-compose logs --tail=100
-
-# Belirli bir servisin logları
-docker logs postgres_dev
-docker logs pgadmin_dev
-docker logs grafana_dev
-```
-
-### Backup Alma
-
-```bash
-# PostgreSQL backup
-docker exec postgres_dev pg_dump -U postgres_dev_user postgres_dev_db > backup_dev_$(date +%Y%m%d).sql
-
-# Windows PowerShell için
-docker exec postgres_dev pg_dump -U postgres_dev_user postgres_dev_db > "backup_dev_$(Get-Date -Format 'yyyyMMdd').sql"
-
-# Restore etme
-docker exec -i postgres_dev psql -U postgres_dev_user postgres_dev_db < backup_dev_20260215.sql
-```
-
-## 🐛 Sorun Giderme
-
-### Port Zaten Kullanılıyor
-
-**Problemi tespit edin:**
-```bash
+```powershell
 # Windows - Port kontrolü
 netstat -ano | findstr :5432
+netstat -ano | findstr :6379
 
-# Linux/Mac - Port kontrolü
-lsof -i :5432
-```
-
-**Çözüm:** İlgili ortamın `.env` dosyasında portu değiştirin:
-```env
-POSTGRES_PORT=5435
+# Çözüm: İlgili .env dosyasındaki portu değiştirin
 ```
 
 ### Container Başlamıyor
 
-```bash
+```powershell
 # Logları kontrol et
-cd environments/dev
-docker-compose logs
+.\manage.ps1 logs dev postgres
 
-# Container'ı yeniden oluştur
-docker-compose down
-docker-compose up -d --force-recreate
-
-# Volume sorunları varsa
-docker-compose down -v
-docker-compose up -d
-```
-
-### pgAdmin Bağlanamıyor
-
-```bash
-# PostgreSQL hazır mı kontrol et
-docker exec postgres_dev pg_isready
-
-# Network bağlantısını kontrol et
-docker network inspect postgres_dev_network
-
-# pgAdmin'i yeniden başlat
-cd environments/dev
-docker-compose restart pgadmin
-```
-
-### Veritabanı Bozuldu
-
-```bash
-# 1. Backup aldıysanız restore edin
-# 2. Yoksa temizleyip yeniden başlatın
-.\manage.ps1 clean dev
-.\manage.ps1 start dev
+# Yeniden oluştur
+.\manage.ps1 stop dev postgres
+.\manage.ps1 start dev postgres
 ```
 
 ### Script Çalışmıyor (Windows)
 
 ```powershell
-# PowerShell execution policy sorunuysa
+# Execution policy ayarla
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-# Sonra tekrar deneyin
-.\manage.ps1 start dev
+# Sonra tekrar dene
+.\manage.ps1 start dev all
 ```
 
 ## 🔄 Güncelleme ve Bakım
 
-### PostgreSQL Versiyonunu Güncelleme
+### Image Güncelleme
 
-1. İlgili ortamın `docker-compose.yml` dosyasını düzenleyin:
-```yaml
-image: postgres:17-alpine  # 16-alpine yerine
-```
+```powershell
+# Belirli bir servis için
+Set-Location postgres/environments/dev
+docker-compose pull
+docker-compose up -d
 
-2. Ortamı yeniden oluşturun:
-```bash
-cd environments/dev
-docker-compose down
+# veya
+Set-Location redis/environments/dev
 docker-compose pull
 docker-compose up -d
 ```
 
-### Tüm Ortamları Temizleme
+### Disk Temizliği
 
-```bash
-# UYARI: Tüm veriler silinir!
+```powershell
+# Kullanılmayan volume'leri temizle
+docker volume prune
 
-# Script ile
-.\manage.ps1 clean all
+# Kullanılmayan image'leri temizle
+docker image prune -a
 
-# veya Manuel
-cd environments/dev && docker-compose down -v && cd ../..
-cd environments/test && docker-compose down -v && cd ../..
-cd environments/prod && docker-compose down -v && cd ../..
+# Sistem geneli temizlik
+docker system prune -a --volumes
 ```
 
-## 💡 İpuçları ve Best Practices
+## 💡 İpuçları
 
-1. **Geliştirme sırasında** sadece dev ortamını çalıştırın
-2. **Test etmeden önce** test ortamını başlatın
-3. **Production'ı** sadece deploy için kullanın
-4. **Düzenli backup** alın, özellikle production için
-5. **Logları** düzenli kontrol edin
-6. **Disk alanını** izleyin, gereksiz volume'leri temizleyin
-7. **Her ortamın .env dosyasını** farklı şifrelerle yapılandırın
+1. **Tek seferde bir ortam**: Development sırasında sadece dev ortamını çalıştırın
+2. **Servis izolasyonu**: PostgreSQL, Redis, RabbitMQ ve Elasticsearch işlerinizi ayırın
+3. **Düzenli backup**: Özellikle production için otomatik backup kurulumu yapın
+4. **Log monitoring**: Kritik ortamlar için log aggregation ekleyin (Elasticsearch + Kibana ideal!)
+5. **Resource limit**: Production container'larına CPU/Memory limiti koyun
+6. **Network segmentation**: Production'da farklı network'ler kullanın
+7. **Health checks**: Container health check'lerini aktif tutun
 
-## 🎯 Ortamlar Arası Geçiş
+## 🎯 Sonraki Adımlar
 
-```bash
-# Development'tan Test'e geçiş
-.\manage.ps1 stop dev
-.\manage.ps1 start test
-
-# Tümünü çalıştır (farklı portlarda)
-.\manage.ps1 start all
-
-# Sadece Production
-.\manage.ps1 stop dev
-.\manage.ps1 stop test
-.\manage.ps1 start prod
-```
-
-## 🔍 Örnek Senaryolar
-
-### Senaryo 1: Yeni Proje Başlangıcı
-
-```bash
-# 1. Şifreleri güncelle
-code environments/dev/.env
-
-# 2. Development ortamını başlat
-.\manage.ps1 start dev
-
-# 3. pgAdmin'e giriş yap
-# http://localhost:5050
-
-# 4. Çalışmayı bitirince durdur
-.\manage.ps1 stop dev
-```
-
-### Senaryo 2: Test Ortamında Çalışma
-
-```bash
-# 1. Test ortamını başlat
-cd environments/test
-docker-compose up -d
-
-# 2. Logları izle
-docker-compose logs -f
-
-# 3. Bitirince durdur
-docker-compose down
-```
-
-### Senaryo 3: Production Deploy
-
-```bash
-# 1. Production .env'i güvenli şifrelerle güncelle
-code environments/prod/.env
-
-# 2. Production'ı başlat
-.\manage.ps1 start prod
-
-# 3. Health check
-docker ps | grep prod
-
-# 4. Logları kontrol et
-.\manage.ps1 logs prod
-```
+1. ✅ **Kurulum Tamamlandı** - Servisleri başlatın
+2. 📖 **Dokümantasyon** - Servis-specific README'leri okuyun
+3. 🔐 **Güvenlik** - Production şifrelerini güncelleyin
+4. � **Backup** - Otomatik backup stratejisi oluşturun
+5. 🔧 **Özelleştirme** - İhtiyacınıza göre ayarlayın
 
 ## 📚 Ek Kaynaklar
 
-- [PostgreSQL Resmi Dokümantasyon](https://www.postgresql.org/docs/)
-- [pgAdmin Dokümantasyon](https://www.pgadmin.org/docs/)
-- [Grafana Dokümantasyon](https://grafana.com/docs/grafana/latest/)
-- [Grafana PostgreSQL Data Source](https://grafana.com/docs/grafana/latest/datasources/postgres/)
+- [PostgreSQL Dokümantasyonu](https://www.postgresql.org/docs/)
+- [Redis Dokümantasyonu](https://redis.io/documentation)
+- [RabbitMQ Dokümantasyonu](https://www.rabbitmq.com/documentation.html)
+- [Elasticsearch Dokümantasyonu](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+- [Kibana Dokümantasyonu](https://www.elastic.co/guide/en/kibana/current/index.html)
 - [Docker Compose Referans](https://docs.docker.com/compose/)
-- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 
-## ❓ Sık Sorulan Sorular
+## ℹ️ Proje Hakkında
 
-**S: Neden her ortam için ayrı klasör?**
-A: İzolasyon, bağımsızlık ve karışıklığı önlemek için. Her ortam kendi bağımsız ekosisteminde çalışır.
+Bu proje bireysel olarak geliştirilmekte ve yönetilmektedir. Public olarak paylaşılmıştır; MIT lisansı kapsamında özgürce kullanabilir ve fork'layabilirsiniz.
 
-**S: Tüm ortamları aynı anda çalıştırabilir miyim?**
-A: Evet, her ortam farklı portlarda olduğu için sorunsuzca çalışabilir.
+## 📄 Lisans
 
-**S: Eski yapıdan nasıl geçiş yaparım?**
-A: Eski yapıdaki .env dosyalarını ilgili ortamların klasörlerine taşıyın ve yeni komutları kullanın.
-**S: Grafana datasource otomatik yüklenmiyor, ne yapmalıyım?**
-A: `grafana-datasources.yml` dosyasının ilgili ortam klasöründe olduğundan ve Grafana container'ının yeniden başlatıldığından emin olun. Manuel olarak da ekleyebilirsiniz.
-**S: Production'da restart policy neden "always"?**
-A: Production'da sunucu yeniden başladığında containerların otomatik başlaması için. Dev/Test'te "unless-stopped" kullanıyoruz.
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 ---
 
-**Hazırlayan:** Best Practices ile Docker & PostgreSQL & Grafana Setup  
-**Son Güncelleme:** 2026-02-15  
-**Versiyon:** 3.0 - Multi-Environment with Grafana Visualization
+**Hazırlayan**: Multi-Service Docker Environment Setup  
+**Son Güncelleme**: 2026-02-21  
+**Versiyon**: 1.0.0
+
+📘 PostgreSQL Detayları: [README-PostgreSQL.md](README-PostgreSQL.md)  
+📕 Redis Detayları: [README-Redis.md](README-Redis.md)  
+📙 RabbitMQ Detayları: [README-RabbitMQ.md](README-RabbitMQ.md)  
+📗 Elasticsearch Detayları: [README-Elasticsearch.md](README-Elasticsearch.md)  
+🍃 MongoDB Detayları: [README-MongoDB.md](README-MongoDB.md)  
+📊 Monitoring Detayları: [README-Monitoring.md](README-Monitoring.md)
+
+Herhangi bir sorunuz için ilgili servis dokümantasyonuna bakın! 🚀

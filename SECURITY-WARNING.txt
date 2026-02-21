@@ -1,0 +1,56 @@
+# ⚠️  GÜVENLIK UYARISI - ÖNEMLİ ⚠️
+#
+# Bu proje .env.example şablon dosyaları içermektedir!
+# Gerçek kullanım önce .env dosyalarını oluşturun ve şifreleri değiştirin.
+#
+# GERÇEK KULLANIM İÇİN:
+# 1. .env.example dosyalarını .env olarak kopyalayın (aşağıya bakın)
+# 2. Tüm şifreleri güçlü, unique değerlerle değiştirin
+# 3. .env dosyaları zaten .gitignore ile korunuyor — Git'e yüklenmiyor
+# 4. Production'da ek güvenlik önlemleri alın
+#
+# Bu şifreler sadece örnek/test amaçlıdır!
+# ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️  ⚠️
+
+# Environment Configuration Template
+# Copy this file to create environment-specific .env files
+# NEVER commit real .env files to Git!
+
+# ============================================
+# KLASÖR YAPISI
+# ============================================
+# Her ortam kendi klasöründe çalışır:
+#
+# environments/
+# ├── dev/
+# │   ├── docker-compose.yml
+# │   └── .env.example      <- .env olarak kopyalayın, şifreyi değiştirin
+# ├── test/
+# │   ├── docker-compose.yml
+# │   └── .env.example      <- .env olarak kopyalayın, şifreyi değiştirin
+# └── prod/
+#     ├── docker-compose.yml
+#     └── .env.example      <- .env olarak kopyalayın, şifreyi değiştirin
+#
+# ============================================
+# KULLANIM (Windows PowerShell)
+# ============================================
+# 1. Her ortam için .env dosyasını oluşturun:
+#    Copy-Item .env.example dev\.env
+#    Copy-Item .env.example test\.env
+#    Copy-Item .env.example prod\.env
+#
+# 2. Her ortam için portları ayarlayın
+# 3. GÜÇLÜ ŞİFRELER BELİRLEYİN (özellikle prod için!)
+# 4. .env dosyaları .gitignore ile zaten korunuyor
+#
+# ============================================
+# GÜVENLİK UYARILARI
+# ============================================
+# ⚠️  ASLA varsayılan şifreleri production'da kullanmayın!
+# ⚠️  Her ortam için FARKLI şifreler kullanın!
+# ⚠️  Şifreleri Git'e YÜKLEMEYIN!
+# ⚠️  Güçlü şifreler: En az 16 karakter, büyük/küçük harf, rakam, özel karakter
+#
+# Örnek Güçlü Şifre: Kx9&mP2$vL8@qR5#wN3!
+#
