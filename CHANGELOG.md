@@ -5,6 +5,25 @@ Bu proje [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) formatını ve
 
 ---
 
+## [1.2.0] - 2026-02-21
+
+### Eklendi
+- `manage.ps1` — `pull` komutu eklendi: `docker-compose pull` ile image'ları indirir
+  - **Akıllı pull**: Tüm image'lar lokalde mevcutsa pull atlanır (`= Already exists` gösterilir)
+  - `all` ile `start`, `stop`, `restart`'ın yanı sıra `pull` da artık **paralel** çalışır
+
+### Değişti
+- `manage.ps1` — `all` komutu için anlık servis listesi ve sonuç tablosu **birleştirildi**:
+  - İşlem sırasında servisler canlı olarak güncellenen liste şeklinde gösterilir
+  - İşlem bitince liste, geçen süre (`(1s)`, `(3s)`) dahil özet tablo ile değiştirilir
+- `manage.ps1` — sonuç tablosundan Container, Volume ve Image sütunları kaldırıldı; tablo yalnızca **Service / Environment / Status** gösteriyor
+- `manage.ps1` — `NotFound` durumu artık tabloda kırmızı renkte gösteriliyor
+- `manage.ps1` — sequential `start` / `stop` fonksiyonlarında container ID hex filtreleme düzeltildi (paralel versiyon ile tutarlı hale getirildi)
+- `README.md` — yeni `pull` komutu, akıllı pull davranışı ve paralel çalışma dokümante edildi
+- `README.md` — "Image Güncelleme" bölümü `manage.ps1 pull` kullanımına yönlendirildi
+
+---
+
 ## [1.1.0] - 2026-02-21
 
 ### Eklendi

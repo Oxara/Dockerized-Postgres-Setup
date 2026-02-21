@@ -73,6 +73,9 @@ docker-service-stack/
 - ✅ **Multi-Service Support**: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring, MSSQL, Keycloak, Seq ve MailHog aynı anda veya ayrı ayrı
 - ✅ **Tamamen İzole Ortamlar**: Her ortam kendi klasöründe
 - ✅ **Kolay Yönetim**: Tek komutla tüm servisleri kontrol edin
+- ✅ **Paralel Çalışma**: `start`, `stop`, `restart` ve `pull` komutları tüm servisler için paralel çalışır
+- ✅ **Akıllı Pull**: `pull` komutu, image zaten lokalde mevcutsa tekrar indirmez (`= Already exists`)
+- ✅ **Canlı Durum + Sonuç Tablosu**: İşlem sırasında her servis anlık izlenir; bitince tek bir özet tablo (harcanan süre dahil) görüntülenir
 - ✅ **Çakışma Yok**: Her ortam ve servis farklı portlarda
 - ✅ **Best Practices**: Docker ve DevOps standartlarına uygun
 - ✅ **Güvenli**: .env dosyaları Git'e yüklenmiyor
@@ -114,7 +117,7 @@ Oluşturulan `.env` dosyalarındaki örnek şifreleri gerçek kullanımdan önce
 
 | Parametre | Seçenekler |
 |-----------|-----------|
-| **komut** | `start` · `stop` · `restart` · `logs` · `status` · `clean` |
+| **komut** | `start` · `stop` · `restart` · `logs` · `status` · `clean` · `purge` · `pull` |
 | **ortam** | `dev` · `test` · `prod` |
 | **servis** | `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog` · `all` |
 
@@ -301,6 +304,7 @@ Invoke-RestMethod -Uri "http://localhost:9200/_cat/indices?v" -Method Get -Crede
 | `restart` | Yeniden başlat | `.\manage.ps1 restart test redis` |
 | `logs` | Log çıktısını izle (`all` desteklenmez) | `.\manage.ps1 logs dev postgres` |
 | `status` | Durum kontrolü | `.\manage.ps1 status dev all` |
+| `pull` | Image'ları indir (zaten varsa atlar) | `.\manage.ps1 pull dev all` |
 | `clean` ⚠️ | Durdur + volume sil | `.\manage.ps1 clean test postgres` |
 | `purge` 💀 | Durdur + volume + image sil | `.\manage.ps1 purge dev postgres` |
 
@@ -342,15 +346,15 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### Image Güncelleme
 
 ```powershell
-# Belirli bir servis için
-Set-Location postgres/environments/dev
-docker-compose pull
-docker-compose up -d
+# manage.ps1 pull komutu ile image'ları güncelle
+# Lokalde zaten mevcut olan image'lar atlanır (= Already exists)
+.\manage.ps1 pull dev all
 
-# veya
-Set-Location redis/environments/dev
-docker-compose pull
-docker-compose up -d
+# Tek servis için
+.\manage.ps1 pull dev postgres
+
+# Güncellemeden sonra servisi yeniden başlatın
+.\manage.ps1 restart dev postgres
 ```
 
 ### Disk Temizliği
@@ -405,6 +409,6 @@ Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 **Hazırlayan**: Multi-Service Docker Environment Setup  
 **Son Güncelleme**: 2026-02-21  
-**Versiyon**: 1.1.0
+**Versiyon**: 1.2.0
 
 Herhangi bir sorunuz için ilgili servis dokümantasyonuna bakın! 🚀
