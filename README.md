@@ -1,6 +1,6 @@
 # Multi-Service Docker Environment Setup
 
-Modern, best-practice yaklaşımıyla hazırlanmış multi-environment **PostgreSQL** + **Redis** + **RabbitMQ** + **Elasticsearch** + **MongoDB** + **Monitoring (Prometheus + Grafana)** Docker kurulumu.
+Modern, best-practice yaklaşımıyla hazırlanmış multi-environment **PostgreSQL** + **Redis** + **RabbitMQ** + **Elasticsearch** + **MongoDB** + **Monitoring (Prometheus + Grafana)** + **MSSQL (SQL Server)** + **Keycloak** + **Seq** + **MailHog** Docker kurulumu.
 
 > ## ⚠️ ÖNEMLİ GÜVENLİK UYARISI
 > 
@@ -8,116 +8,69 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment **Postgre
 > 
 > **GERÇEK PROJENIZDE MUTLAKA YAPMANIZ GEREKENLER:**
 > 
-> 1. **`.gitignore` dosyasını güncelleyin**: `.env` satırlarının yorumunu kaldırarak `.env` dosyalarını Git'e eklemeyin
-> 2. **Tüm şifreleri değiştirin**: `.env` dosyalarındaki tüm şifreler güçlü, unique şifreler ile değiştirilmelidir
-> 3. **Production'da ekstra önlemler**: Güvenlik duvarı, SSL/TLS, network izolasyonu ekleyin
-> 4. **Düzenli güvenlik güncellemeleri**: Docker image'larını güncel tutun
+> 1. **Tüm şifreleri değiştirin**: `.env` dosyalarındaki tüm şifreler güçlü, unique şifreler ile değiştirilmelidir
+> 2. **Production'da ekstra önlemler**: Güvenlik duvarı, SSL/TLS, network izolasyonu ekleyin
+> 3. **Düzenli güvenlik güncellemeleri**: Docker image'larını güncel tutun
 > 
 > **Bu projeyi olduğu gibi production'da kullanmayın!** 🔒
 
 ## 🎯 Genel Bakış
 
-Bu proje, PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB ve Monitoring (Prometheus + Grafana) servislerini birden fazla ortamda (Development, Test, Production) kolayca yönetmenize olanak sağlar. Her servis için ayrı yönetim arayüzü entegre edilmiştir.
+Bu proje, 10 bağımsız servisi birden fazla ortamda (Development, Test, Production) kolayca yönetmenize olanak sağlar. Her servis tamamen izole çalışır ve kendi yönetim arayüzüne sahiptir.
 
 ### 📦 İçerik
 
-- **PostgreSQL Stack**: PostgreSQL + pgAdmin
-- **Redis Stack**: Redis + RedisInsight
-- **RabbitMQ Stack**: RabbitMQ + Management UI
-- **Elasticsearch Stack**: Elasticsearch + Kibana
-- **MongoDB Stack**: MongoDB + Mongo Express
-- **Monitoring Stack**: Prometheus + Grafana
-- **Tek Komutla Yönetim**: Tüm servisleri veya seçtiğiniz servisi başlatın/durdurun
-- **Multi-Environment**: Dev, Test, Prod ortamları tamamen izole
+| Stack | Bileşenler | Kullanım Amacı |
+|-------|-----------|----------------|
+| **PostgreSQL** | PostgreSQL + pgAdmin | İlişkisel veritabanı |
+| **Redis** | Redis + RedisInsight | Cache, session, pub/sub |
+| **RabbitMQ** | RabbitMQ + Management UI | Message queue / event bus |
+| **Elasticsearch** | Elasticsearch + Kibana | Full-text search, analytics |
+| **MongoDB** | MongoDB + Mongo Express | Doküman veritabanı |
+| **Monitoring** | Prometheus + Grafana | Metrik toplama ve görselleştirme |
+| **MSSQL** | SQL Server 2022 + Adminer | İlişkisel DB (.NET native) |
+| **Keycloak** | Keycloak 26 + PostgreSQL | OAuth2/OIDC identity server |
+| **Seq** | Seq Log Server | Structured log analizi (.NET) |
+| **MailHog** | Fake SMTP Server | E-posta tuzağı (dev/test) |
+
+Her servis **dev / test / prod** ortamlarında tamamen izole çalışır. `manage.ps1` ile tek komutla yönetilir.
 
 ## 📁 Klasör Yapısı
 
+Tüm servisler aynı klasör yapısını paylaşır:
+
 ```
-database-stack/
-├── postgres/
+docker-service-stack/
+├── {servis}/
 │   └── environments/
 │       ├── dev/
 │       │   ├── docker-compose.yml
-│       │   └── .env
+│       │   └── .env.example      # → .env olarak kopyalanır (.gitignore'da)
 │       ├── test/
-│       │   ├── docker-compose.yml
-│       │   └── .env
+│       │   └── ...               # aynı yapı
 │       └── prod/
-│           ├── docker-compose.yml
-│           └── .env
-├── redis/
-│   └── environments/
-│       ├── dev/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       ├── test/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       └── prod/
-│           ├── docker-compose.yml
-│           └── .env
-├── rabbitmq/
-│   └── environments/
-│       ├── dev/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       ├── test/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       └── prod/
-│           ├── docker-compose.yml
-│           └── .env
-├── elasticsearch/
-│   └── environments/
-│       ├── dev/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       ├── test/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       └── prod/
-│           ├── docker-compose.yml
-│           └── .env
-├── mongodb/
-│   └── environments/
-│       ├── dev/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       ├── test/
-│       │   ├── docker-compose.yml
-│       │   └── .env
-│       └── prod/
-│           ├── docker-compose.yml
-│           └── .env
-├── monitoring/
-│   └── environments/
-│       ├── dev/
-│       │   ├── docker-compose.yml
-│       │   ├── prometheus.yml
-│       │   └── .env
-│       ├── test/
-│       │   ├── docker-compose.yml
-│       │   ├── prometheus.yml
-│       │   └── .env
-│       └── prod/
-│           ├── docker-compose.yml
-│           ├── prometheus.yml
-│           └── .env
-├── manage.ps1                # Windows yönetim scripti
-├── SECURITY-WARNING.txt      # ⚠️ ÖNEMLI GÜVENLİK TALİMATLARI
-├── .gitignore                # Git ignore ayarları (güvenlik uyarıları içerir)
-├── README.md                 # Bu dosya
-├── README-PostgreSQL.md      # PostgreSQL detaylı dokümantasyon
-├── README-Redis.md           # Redis detaylı dokümantasyon
-├── README-RabbitMQ.md        # RabbitMQ detaylı dokümantasyon
-├── README-Elasticsearch.md   # Elasticsearch detaylı dokümantasyon
-├── README-MongoDB.md         # MongoDB detaylı dokümantasyon
-└── README-Monitoring.md      # Monitoring detaylı dokümantasyon
+│           └── ...               # aynı yapı (monitoring: + prometheus.yml)
+├── manage.ps1
+├── .gitignore · LICENSE · CHANGELOG.md · SECURITY-WARNING.txt
+└── README.md · README-{Servis}.md × 10
 ```
+
+| Klasör | Servis | UI Bileşeni |
+|--------|--------|-------------|
+| `postgres/` | PostgreSQL | pgAdmin |
+| `redis/` | Redis | RedisInsight |
+| `rabbitmq/` | RabbitMQ | Management UI |
+| `elasticsearch/` | Elasticsearch | Kibana |
+| `mongodb/` | MongoDB | Mongo Express |
+| `monitoring/` | Prometheus | Grafana |
+| `mssql/` | SQL Server 2022 | Adminer |
+| `keycloak/` | Keycloak 26 | Admin Console |
+| `seq/` | Seq Log Server | Web UI (dahili) |
+| `mailhog/` | MailHog SMTP | Web UI (dahili) |
 
 ## ✨ Özellikler
 
-- ✅ **Multi-Service Support**: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB ve Monitoring aynı anda veya ayrı ayrı
+- ✅ **Multi-Service Support**: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring, MSSQL, Keycloak, Seq ve MailHog aynı anda veya ayrı ayrı
 - ✅ **Tamamen İzole Ortamlar**: Her ortam kendi klasöründe
 - ✅ **Kolay Yönetim**: Tek komutla tüm servisleri kontrol edin
 - ✅ **Çakışma Yok**: Her ortam ve servis farklı portlarda
@@ -127,13 +80,15 @@ database-stack/
 
 ## 🚀 Hızlı Başlangıç
 
-### 1️⃣ İlk Kurulum: `.env` Dosyalarını Oluşturun
+### ⚙️ Gereksinimler
 
-Her servis için `.env.example` şablonlarından `.env` dosyaları oluşturun:
+- Docker Desktop (Windows) + Docker Compose
+- PowerShell 5.1 veya üzeri
+
+### 1️⃣ `.env` Dosyalarını Oluşturun
 
 ```powershell
-# Tüm servislerin .env.example dosyalarından .env oluştur
-$services = @("postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring")
+$services = @("postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring","mssql","keycloak","seq","mailhog")
 $envs     = @("dev","test","prod")
 foreach ($svc in $services) {
     foreach ($env in $envs) {
@@ -144,227 +99,116 @@ foreach ($svc in $services) {
 }
 ```
 
-> 💡 `.env` dosyaları `.gitignore` tarafından korunuyor — Git'e yüklenmez.
+> 💡 `.env` dosyaları `.gitignore` tarafından korunur — Git'e yüklenmez.
 
 ### ⚠️ Şifreleri Güncelleyin
 
-**Gerçek kullanım öncesi mutlaka yapın:**
+Oluşturulan `.env` dosyalarındaki örnek şifreleri gerçek kullanımdan önce değiştirin.  
+Özellikle `prod` ortamı için zorunludur. Detaylar için `SECURITY-WARNING.txt` dosyasına bakın.
 
-1. **Her servisteki `.env` dosyalarını düzenleyin** ve şifreleri güçlü değerlerle değiştirin
-   ```powershell
-   # Her serviste 3 ortam var (dev, test, prod) → toplam 18 .env dosyası
-   code postgres\environments\prod\.env
-   ```
+### 2️⃣ Servisleri Başlatın
 
-2. **`SECURITY-WARNING.txt` dosyasını okuyun**
-
-### 1️⃣ Gereksinimler
-
-- Docker Desktop (Windows)
-- Docker Compose
-- PowerShell 5.1 veya üzeri
-
-### 2️⃣ Temel Komutlar
-
-**Format:**
 ```powershell
 .\manage.ps1 [komut] [ortam] [servis]
-
-# Örnek kullanım
-.\manage.ps1 start dev postgres
 ```
 
-**Parametreler:**
-- **Komut**: `start`, `stop`, `restart`, `logs`, `status`, `clean`
-- **Ortam**: `dev`, `test`, `prod`
-- **Servis**: `postgres`, `redis`, `rabbitmq`, `elasticsearch`, `mongodb`, `monitoring`, `all`
+| Parametre | Seçenekler |
+|-----------|-----------|
+| **komut** | `start` · `stop` · `restart` · `logs` · `status` · `clean` |
+| **ortam** | `dev` · `test` · `prod` |
+| **servis** | `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog` · `all` |
 
-### 3️⃣ Örnek Kullanımlar
+### 3️⃣ Örnek Komutlar
 
 ```powershell
-# 🐘 Sadece PostgreSQL başlat (Development)
+# Tek servis — başlat / durdur
 .\manage.ps1 start dev postgres
+.\manage.ps1 stop  dev postgres
 
-# 🔴 Sadece Redis başlat (Development)
-.\manage.ps1 start dev redis
-
-# 🐰 Sadece RabbitMQ başlat (Development)
-.\manage.ps1 start dev rabbitmq
-
-# 🔍 Sadece Elasticsearch başlat (Development)
-.\manage.ps1 start dev elasticsearch
-
-# 🍃 Sadece MongoDB başlat (Development)
-.\manage.ps1 start dev mongodb
-
-# 📊 Sadece Monitoring başlat (Development)
-.\manage.ps1 start dev monitoring
-
-# 🎯 Development ortamındaki tüm servisleri başlat
+# Tüm servisleri başlat
 .\manage.ps1 start dev all
 
-# 📊 Production ortamındaki tüm servislerin durumunu görüntüle
-.\manage.ps1 status prod all
-
-# 🛑 Test ortamındaki Redis'i durdur
-.\manage.ps1 stop test redis
-
-# 🔄 Production'daki tüm servisleri yeniden başlat
-.\manage.ps1 restart prod all
-
-# 📋 Development Redis loglarını izle
-.\manage.ps1 logs dev redis
-
-# 🔁 Ortamlar arası geçiş (dev → test → prod)
+# Ortam geçişi (dev → test)
 .\manage.ps1 stop dev all
 .\manage.ps1 start test all
 
-# 🗑️ Test ortamındaki PostgreSQL'i temizle (veriler silinir!)
-.\manage.ps1 clean test postgres
+# Diğer
+.\manage.ps1 status dev all            # tüm container durumu
+.\manage.ps1 logs   dev rabbitmq       # canlı log takibi
+.\manage.ps1 restart prod monitoring   # yeniden başlat
+.\manage.ps1 clean test postgres       # ⚠️ veri silinir
 ```
 
 ## 📊 Port Dağılımı
 
-### PostgreSQL Stack
+> **Host Port** → container'a yönlendirilen host portu. **Container Port** → container içindeki gerçek port.
 
-| Ortam | PostgreSQL | pgAdmin |
-|-------|-----------|----------|
-| **Dev** | 5432 | 5050 |
-| **Test** | 5433 | 5051 |
-| **Prod** | 5434 | 5052 |
-
-### Redis Stack
-
-| Ortam | Redis | RedisInsight |
-|-------|-------|-------------|
-| **Dev** | 6379 | 8001 |
-| **Test** | 6380 | 8002 |
-| **Prod** | 6381 | 8003 |
-
-### RabbitMQ Stack
-
-| Ortam | AMQP | Management UI |
-|-------|------|---------------|
-| **Dev** | 5672 | 15672 |
-| **Test** | 5673 | 15673 |
-| **Prod** | 5674 | 15674 |
-
-### Elasticsearch Stack
-
-| Ortam | Elasticsearch | Kibana |
-|-------|---------------|--------|
-| **Dev** | 9200 | 5601 |
-| **Test** | 9201 | 5602 |
-| **Prod** | 9202 | 5603 |
-
-### MongoDB Stack
-
-| Ortam | MongoDB | Mongo Express |
-|-------|---------|---------------|
-| **Dev** | 27017 | 8081 |
-| **Test** | 27018 | 8082 |
-| **Prod** | 27019 | 8083 |
-
-### Monitoring Stack
-
-| Ortam | Prometheus | Grafana |
-|-------|------------|---------|
-| **Dev** | 9090 | 3000 |
-| **Test** | 9091 | 3001 |
-| **Prod** | 9092 | 3002 |
-
+| Servis | Bileşen | Container Port | Dev | Test | Prod |
+|--------|---------|:--------------:|-----|------|------|
+| **PostgreSQL** | PostgreSQL | 5432 | 5432 | 5433 | 5434 |
+| | pgAdmin | 80 | 5050 | 5051 | 5052 |
+| **Redis** | Redis | 6379 | 6379 | 6380 | 6381 |
+| | RedisInsight | 5540 | 8001 | 8002 | 8003 |
+| **RabbitMQ** | AMQP | 5672 | 5672 | 5673 | 5674 |
+| | Management UI | 15672 | 15672 | 15673 | 15674 |
+| **Elasticsearch** | Elasticsearch | 9200 | 9200 | 9201 | 9202 |
+| | Kibana | 5601 | 5601 | 5602 | 5603 |
+| **MongoDB** | MongoDB | 27017 | 27017 | 27018 | 27019 |
+| | Mongo Express | 8081 | 8081 | 8082 | 8083 |
+| **Monitoring** | Prometheus | 9090 | 9090 | 9091 | 9092 |
+| | Grafana | 3000 | 3000 | 3001 | 3002 |
+| **MSSQL** | SQL Server | 1433 | 1433 | 1434 | 1435 |
+| | Adminer | 8080 | 8380 | 8381 | 8382 |
+| **Keycloak** | Admin UI | 8080 | 8080 | 8180 | 8280 |
+| **Seq** | Web UI + Ingestion | 80 | 5341 | 5342 | 5343 |
+| **MailHog** | SMTP | 1025 | 1025 | 1026 | 1027 |
+| | Web UI | 8025 | 8025 | 8026 | 8027 |
 ## 🔧 Yapılandırma
 
-Her servisin her ortamı için ayrı `.env` dosyası bulunmaktadır.  
-`.env.example` şablon dosyalarından kopyalanarak oluşturulur (bkz. Hızlı Başlangıç):
+Şablon: `{servis}/environments/{env}/.env.example` → `{servis}/environments/{env}/.env` olarak kopyalanır.
 
-- `postgres/environments/dev/.env`
-- `postgres/environments/test/.env`
-- `postgres/environments/prod/.env`
-- `redis/environments/dev/.env`
-- `redis/environments/test/.env`
-- `redis/environments/prod/.env`
-- `rabbitmq/environments/dev/.env`
-- `rabbitmq/environments/test/.env`
-- `rabbitmq/environments/prod/.env`
-- `elasticsearch/environments/dev/.env`
-- `elasticsearch/environments/test/.env`
-- `elasticsearch/environments/prod/.env`
+Toplam **30 dosya** (10 servis × 3 ortam) — hepsi `.gitignore` tarafından korunur.
 
-**Önemli:** Production ortamları için mutlaka güçlü şifreler kullanın!
+Servisler: `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog`
+
+> ⚠️ Production ortamları için mutlaka güçlü şifreler kullanın!
 
 ## 📖 Detaylı Dokümantasyon
 
-Her servis için kapsamlı dokümantasyon mevcuttur:
-
-### [📘 PostgreSQL Dokümantasyonu](README-PostgreSQL.md)
-- PostgreSQL + pgAdmin kurulumu
-- Bağlantı örnekleri (.NET/C#)
-- Backup ve restore işlemleri
-- Sorun giderme rehberi
-- Güvenlik best practices
-
-### [📕 Redis Dokümantasyonu](README-Redis.md)
-- Redis + RedisInsight kurulumu
-- Redis komutları ve kullanımları
-- Cache senaryoları
-- AOF persistence ayarları
-- Performance optimizasyonu
-
-### [📙 RabbitMQ Dokümantasyonu](README-RabbitMQ.md)
-- RabbitMQ + Management UI kurulumu
-- Message queue kullanımı
-- Exchange ve queue yönetimi
-- Bağlantı örnekleri (.NET/C#)
-- Production best practices
-
-### [📗 Elasticsearch Dokümantasyonu](README-Elasticsearch.md)
-- Elasticsearch + Kibana kurulumu
-- REST API kullanımı
-- Index ve mapping yönetimi
-- Arama sorguları (Query DSL)
-- Kibana Dev Tools ve dashboard'lar
-- Aggregation ve analytics örnekleri
+| Servis | Dokümantasyon | İçerik |
+|--------|---------------|--------|
+| 📘 PostgreSQL | [README-PostgreSQL.md](postgres/README-PostgreSQL.md) | pgAdmin kurulumu · Npgsql / EF Core · Backup/Restore · Security |
+| 📕 Redis | [README-Redis.md](redis/README-Redis.md) | StackExchange.Redis · Cache senaryoları · AOF persistence |
+| 📙 RabbitMQ | [README-RabbitMQ.md](rabbitmq/README-RabbitMQ.md) | RabbitMQ.Client · Exchange/Queue yönetimi · Best practices |
+| 📗 Elasticsearch | [README-Elasticsearch.md](elasticsearch/README-Elasticsearch.md) | NEST / REST API · Query DSL · Kibana Dashboard |
+| 🍃 MongoDB | [README-MongoDB.md](mongodb/README-MongoDB.md) | MongoDB.Driver · CRUD · Repository pattern |
+| 📊 Monitoring | [README-Monitoring.md](monitoring/README-Monitoring.md) | Prometheus metrik toplama · Grafana dashboard |
+| 🔴 MSSQL | [README-MSSQL.md](mssql/README-MSSQL.md) | EF Core / Microsoft.Data.SqlClient · Migration · Backup |
+| 🔐 Keycloak | [README-Keycloak.md](keycloak/README-Keycloak.md) | JWT Bearer · OIDC · Blazor entegrasyonu · Admin API |
+| 📋 Seq | [README-Seq.md](seq/README-Seq.md) | Serilog/NLog sink · FilterExpressions · Alert/Signal |
+| 📧 MailHog | [README-MailHog.md](mailhog/README-MailHog.md) | MailKit servisi · DI entegrasyonu · Integration test |
 
 ## 💡 Kullanım Senaryoları
 
-### Senaryo 1: Sadece PostgreSQL ile Çalışma
+### Senaryo 1: Tek Servis ile Çalışma
 
 ```powershell
-# Development ortamını başlat
+# Herhangi bir servisi başlat (postgres, redis, rabbitmq, mssql, keycloak, seq, mailhog…)
 .\manage.ps1 start dev postgres
 
-# pgAdmin'e bağlan: http://localhost:5050
+# Servis UI/API erişim örnekleri:
+#   pgAdmin       → http://localhost:5050
+#   RedisInsight  → http://localhost:8001
+#   RabbitMQ UI   → http://localhost:15672
+#   Keycloak      → http://localhost:8080/admin
+#   Seq           → http://localhost:5341
+#   MailHog       → http://localhost:8025
 
 # İşin bitince durdur
 .\manage.ps1 stop dev postgres
 ```
 
-### Senaryo 2: Sadece Redis ile Çalışma
-
-```powershell
-# Development ortamını başlat
-.\manage.ps1 start dev redis
-
-# RedisInsight'a bağlan: http://localhost:8001
-
-# İşin bitince durdur
-.\manage.ps1 stop dev redis
-```
-
-### Senaryo 3: Sadece RabbitMQ ile Çalışma
-
-```powershell
-# Development ortamını başlat
-.\manage.ps1 start dev rabbitmq
-
-# Management UI'a bağlan: http://localhost:15672
-
-# İşin bitince durdur
-.\manage.ps1 stop dev rabbitmq
-```
-
-### Senaryo 4: Tüm Servisleri Birlikte Kullanma
+### Senaryo 2: Tüm Servisleri Birlikte Kullanma
 
 ```powershell
 # Tümünü başlat
@@ -382,6 +226,12 @@ Her servis için kapsamlı dokümantasyon mevcuttur:
 # Mongo Express: http://localhost:8081
 # Prometheus: http://localhost:9090
 # Grafana: http://localhost:3000
+# SQL Server: localhost:1433
+# Adminer (MSSQL): http://localhost:8380
+# Keycloak: http://localhost:8080/admin
+# Seq: http://localhost:5341
+# MailHog Web UI: http://localhost:8025
+# MailHog SMTP: localhost:1025
 
 # Durumu kontrol et
 .\manage.ps1 status dev all
@@ -390,7 +240,7 @@ Her servis için kapsamlı dokümantasyon mevcuttur:
 .\manage.ps1 stop dev all
 ```
 
-### Senaryo 5: Sadece Elasticsearch ile Çalışma
+### Senaryo 3: Elasticsearch API ile Çalışma
 
 ```powershell
 # Development Elasticsearch başlat
@@ -406,7 +256,7 @@ Invoke-RestMethod -Uri "http://localhost:9200/_cat/indices?v" -Method Get -Crede
 .\manage.ps1 stop dev elasticsearch
 ```
 
-### Senaryo 6: Test Ortamında Çalışma
+### Senaryo 4: Test Ortamında Çalışma
 
 ```powershell
 # Test ortamında tüm servisleri başlat
@@ -441,42 +291,18 @@ Invoke-RestMethod -Uri "http://localhost:9200/_cat/indices?v" -Method Get -Crede
 
 ## 📋 Yönetim Komutları Özeti
 
-### Başlatma
-```powershell
-.\manage.ps1 start <env> <service>
-# Örnek: .\manage.ps1 start dev postgres
-```
+> Şablon: `.\manage.ps1 <komut> <env> <servis>`  
+> `<env>`: `dev` · `test` · `prod` — `<servis>`: servis adı veya `all`
 
-### Durdurma
-```powershell
-.\manage.ps1 stop <env> <service>
-# Örnek: .\manage.ps1 stop dev all
-```
-
-### Yeniden Başlatma
-```powershell
-.\manage.ps1 restart <env> <service>
-# Örnek: .\manage.ps1 restart test redis
-```
-
-### Log İzleme
-```powershell
-.\manage.ps1 logs <env> <service>
-# Örnek: .\manage.ps1 logs dev postgres
-# Not: 'all' ortamı ile kullanılamaz
-```
-
-### Durum Kontrolü
-```powershell
-.\manage.ps1 status <env> <service>
-# Örnek: .\manage.ps1 status dev all
-```
-
-### Temizleme (Veriler Silinir!)
-```powershell
-.\manage.ps1 clean <env> <service>
-# Örnek: .\manage.ps1 clean test postgres
-```
+| Komut | Açıklama | Örnek |
+|-------|----------|-------|
+| `start` | Servisleri başlat | `.\manage.ps1 start dev postgres` |
+| `stop` | Servisleri durdur | `.\manage.ps1 stop dev all` |
+| `restart` | Yeniden başlat | `.\manage.ps1 restart test redis` |
+| `logs` | Log çıktısını izle (`all` desteklenmez) | `.\manage.ps1 logs dev postgres` |
+| `status` | Durum kontrolü | `.\manage.ps1 status dev all` |
+| `clean` ⚠️ | Durdur + volume sil | `.\manage.ps1 clean test postgres` |
+| `purge` 💀 | Durdur + volume + image sil | `.\manage.ps1 purge dev postgres` |
 
 ## 🔍 Sorun Giderme
 
@@ -579,13 +405,6 @@ Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 **Hazırlayan**: Multi-Service Docker Environment Setup  
 **Son Güncelleme**: 2026-02-21  
-**Versiyon**: 1.0.0
-
-📘 PostgreSQL Detayları: [README-PostgreSQL.md](README-PostgreSQL.md)  
-📕 Redis Detayları: [README-Redis.md](README-Redis.md)  
-📙 RabbitMQ Detayları: [README-RabbitMQ.md](README-RabbitMQ.md)  
-📗 Elasticsearch Detayları: [README-Elasticsearch.md](README-Elasticsearch.md)  
-🍃 MongoDB Detayları: [README-MongoDB.md](README-MongoDB.md)  
-📊 Monitoring Detayları: [README-Monitoring.md](README-Monitoring.md)
+**Versiyon**: 1.1.0
 
 Herhangi bir sorunuz için ilgili servis dokümantasyonuna bakın! 🚀

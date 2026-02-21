@@ -1,5 +1,6 @@
 # Multi-Service Docker Environment Management Script
 # Services: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring (Prometheus + Grafana)
+#           MSSQL (SQL Server), Keycloak, Seq, MailHog
 # Usage: .\manage.ps1 [action] [environment] [service]
 # Example: .\manage.ps1 start dev postgres
 #          .\manage.ps1 start dev redis
@@ -7,13 +8,18 @@
 #          .\manage.ps1 start dev elasticsearch
 #          .\manage.ps1 start dev mongodb
 #          .\manage.ps1 start dev monitoring
+#          .\manage.ps1 start dev mssql
+#          .\manage.ps1 start dev keycloak
+#          .\manage.ps1 start dev seq
+#          .\manage.ps1 start dev mailhog
 #          .\manage.ps1 start dev all
 #          .\manage.ps1 stop test all
 #          .\manage.ps1 status prod all
+#          .\manage.ps1 purge dev postgres
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("start", "stop", "restart", "logs", "status", "clean")]
+    [ValidateSet("start", "stop", "restart", "logs", "status", "clean", "purge")]
     [string]$Action,
     
     [Parameter(Mandatory=$true)]
@@ -21,7 +27,7 @@ param(
     [string]$Environment,
     
     [Parameter(Mandatory=$true)]
-    [ValidateSet("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "all")]
+    [ValidateSet("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog", "all")]
     [string]$Service
 )
 
@@ -64,6 +70,26 @@ $services = @{
         "name" = "Monitoring"
         "path" = "monitoring"
         "icon" = "[MT]"
+    }
+    "mssql" = @{
+        "name" = "MSSQL"
+        "path" = "mssql"
+        "icon" = "[MS]"
+    }
+    "keycloak" = @{
+        "name" = "Keycloak"
+        "path" = "keycloak"
+        "icon" = "[KC]"
+    }
+    "seq" = @{
+        "name" = "Seq"
+        "path" = "seq"
+        "icon" = "[SQ]"
+    }
+    "mailhog" = @{
+        "name" = "MailHog"
+        "path" = "mailhog"
+        "icon" = "[MH]"
     }
 }
 
@@ -181,7 +207,7 @@ function Show-Status {
     Write-Info "Container Status:"
     Write-Host ""
     
-    $servicesToCheck = if ($svc -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring") } else { @($svc) }
+    $servicesToCheck = if ($svc -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog") } else { @($svc) }
     
     foreach ($service in $servicesToCheck) {
         $svcInfo = $services[$service]
@@ -237,15 +263,46 @@ function Clean-Environment {
     }
 }
 
+function Purge-Environment {
+    param(
+        [string]$env,
+        [string]$svc
+    )
+
+    $envInfo = $environments[$env]
+    $svcInfo = $services[$svc]
+    $fullPath = "$($svcInfo.path)/$($envInfo.path)"
+    $projectName = "$($svc)_$($env)"
+
+    Write-ErrorMessage "DANGER: $($svcInfo.name) - $($envInfo.name) icin TUM VERILER, VOLUME'LER ve IMAGE'LAR silinecek!"
+    $confirm = Read-Host "Devam etmek istiyor musunuz? (Y/N)"
+
+    if ($confirm -match '^[Yy](es)?$') {
+        Write-Info "Purging $($svcInfo.name) - $($envInfo.name)..."
+
+        if (Test-Path "$fullPath/docker-compose.yml") {
+            Push-Location $fullPath
+            docker-compose -p $projectName down -v --rmi all --remove-orphans
+            Pop-Location
+
+            Write-Success "SUCCESS: $($svcInfo.name) - $($envInfo.name) purged (containers + volumes + images)!"
+        } else {
+            Write-Warning "WARNING: $fullPath not found!"
+        }
+    } else {
+        Write-Info "Operation cancelled."
+    }
+}
+
 # Main logic
 Write-Info "======================================="
 Write-Info "  Multi-Service Docker Manager"
-Write-Info "  PG + Redis + RabbitMQ + ES + Mongo + Mon"
+Write-Info "  PG + Redis + RabbitMQ + ES + Mongo + Mon + MSSQL + KC + Seq + MH"
 Write-Info "======================================="
 Write-Host ""
 
 # Determine service list
-$servicesToProcess = if ($Service -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring") } else { @($Service) }
+$servicesToProcess = if ($Service -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog") } else { @($Service) }
 
 # Execute operations
 foreach ($svc in $servicesToProcess) {
@@ -255,6 +312,7 @@ foreach ($svc in $servicesToProcess) {
         "restart" { Restart-Environment $Environment $svc }
         "logs"    { Show-Logs $Environment $svc }
         "clean"   { Clean-Environment $Environment $svc }
+        "purge"   { Purge-Environment $Environment $svc }
     }
     
     if ($servicesToProcess.Count -gt 1) {

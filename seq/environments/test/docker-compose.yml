@@ -1,0 +1,29 @@
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: seq_test
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "${SEQ_PORT:-5342}:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - seq_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  seq_data:
+    name: seq_test_data
+    driver: local
+
+networks:
+  seq_network:
+    name: seq_test_network
+    driver: bridge

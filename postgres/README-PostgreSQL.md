@@ -5,67 +5,20 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment PostgreSQ
 ## 📁 Klasör Yapısı
 
 ```
-postgres-docker/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── prod/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   └── .env.example
-├── manage.ps1              # Windows yönetim scripti
-├── .gitignore
-└── README.md
+postgres/
+└── environments/
+    ├── dev/
+    │   ├── docker-compose.yml
+    │   └── .env
+    ├── test/
+    │   ├── docker-compose.yml
+    │   └── .env
+    └── prod/
+        ├── docker-compose.yml
+        └── .env
 ```
 
-### 🔍 Klasör Yapısı Açıklaması
-
-**Her ortam tamamen izole şekilde kendi klasöründe çalışır:**
-
-- **`environments/dev/`** - Development (Geliştirme) ortamı
-  - `docker-compose.yml` - Dev için compose yapılandırması
-  - `.env` - Dev ortam değişkenleri (port: 5432, 5050)
-
-- **`environments/test/`** - Test ortamı
-  - `docker-compose.yml` - Test için compose yapılandırması
-  - `.env` - Test ortam değişkenleri (port: 5433, 5051)
-
-- **`environments/prod/`** - Production (Canlı) ortamı
-  - `docker-compose.yml` - Prod için compose yapılandırması
-  - `.env` - Prod ortam değişkenleri (port: 5434, 5052)
-
-- **`environments/.env.example`** - Şablon dosya (yeni ortam eklemek için)
-
-**Yönetim Dosyası:**
-- `manage.ps1` - Windows PowerShell yönetim scripti
-
-### 📝 Yeni Ortam Ekleme
-
-Yeni bir ortam eklemek isterseniz:
-
-```powershell
-# 1. Yeni klasör oluştur
-New-Item -ItemType Directory -Path "environments\staging"
-
-# 2. .env.example'ı kopyala
-Copy-Item "environments\.env.example" "environments\staging\.env"
-
-# 3. docker-compose.yml'yi başka ortamdan kopyala
-Copy-Item "environments\dev\docker-compose.yml" "environments\staging\docker-compose.yml"
-
-# 4. Değerleri düzenle (.env ve docker-compose.yml)
-# - Container isimleri: postgres_staging, pgadmin_staging
-# - Portlar: 5435, 5053 (benzersiz olmalı)
-# - Volume ve network isimleri: postgres_staging_*, postgres_staging_network
-
-# 5. Başlat
-Set-Location environments\staging
-docker-compose up -d
-```
+> Servis `.\manage.ps1` ile proje kök dizininden yönetilir. Yönetim komutları için [ana README](../README.md)'e bakın.
 
 ## ✨ Özellikler
 
@@ -85,9 +38,9 @@ docker-compose up -d
 
 ```powershell
 # Her ortam için .env.example'dan kopyala
-Copy-Item environments\dev\.env.example environments\dev\.env
-Copy-Item environments\test\.env.example environments\test\.env
-Copy-Item environments\prod\.env.example environments\prod\.env
+Copy-Item postgres\environments\dev\.env.example postgres\environments\dev\.env
+Copy-Item postgres\environments\test\.env.example postgres\environments\test\.env
+Copy-Item postgres\environments\prod\.env.example postgres\environments\prod\.env
 ```
 
 **Her ortam için portları ayarlayın:**
@@ -122,21 +75,10 @@ PGADMIN_PASSWORD=ÇOK_GÜÇLÜ_PGADMIN_ŞİFRESİ_456!@#
 .\manage.ps1 start dev postgres
 ```
 
-**Manuel Yol:**
-
-```powershell
-# Development ortamını başlat
-Set-Location environments\dev
-docker-compose up -d
-
-# veya kök dizinden
-docker-compose -f environments/dev/docker-compose.yml up -d
-```
-
 ### 3️⃣ Erişim
 
-| Ortam | PostgreSQL | pgAdmin |
-|-------|-----------|----------|
+| Ortam | PostgreSQL `→5432` | pgAdmin `→80` |
+|-------|-------------------|---------------|
 | **Dev** | `localhost:5432` | http://localhost:5050 |
 | **Test** | `localhost:5433` | http://localhost:5051 |
 | **Prod** | `localhost:5434` | http://localhost:5052 |

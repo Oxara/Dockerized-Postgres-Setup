@@ -6,20 +6,22 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment Monitorin
 
 ```
 monitoring/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   ├── prometheus.yml
-│   │   └── .env
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   ├── prometheus.yml
-│   │   └── .env
-│   └── prod/
-│       ├── docker-compose.yml
-│       ├── prometheus.yml
-│       └── .env
+└── environments/
+    ├── dev/
+    │   ├── docker-compose.yml
+    │   ├── prometheus.yml
+    │   └── .env
+    ├── test/
+    │   ├── docker-compose.yml
+    │   ├── prometheus.yml
+    │   └── .env
+    └── prod/
+        ├── docker-compose.yml
+        ├── prometheus.yml
+        └── .env
 ```
+
+> Servis `.\manage.ps1` ile proje kök dizininden yönetilir. Yönetim komutları için [ana README](../README.md)'e bakın.
 
 ## ✨ Özellikler
 
@@ -41,9 +43,9 @@ monitoring/
 
 ```powershell
 # Her ortam için .env.example'dan kopyala
-Copy-Item environments\dev\.env.example environments\dev\.env
-Copy-Item environments\test\.env.example environments\test\.env
-Copy-Item environments\prod\.env.example environments\prod\.env
+Copy-Item monitoring\environments\dev\.env.example monitoring\environments\dev\.env
+Copy-Item monitoring\environments\test\.env.example monitoring\environments\test\.env
+Copy-Item monitoring\environments\prod\.env.example monitoring\environments\prod\.env
 ```
 
 **Güvenlik için Grafana şifresini değiştirin:**
@@ -68,32 +70,15 @@ GRAFANA_ADMIN_PASSWORD=ÇOK_GÜÇLÜ_PROD_ŞİFRESİ_123!@#
 .\manage.ps1 start dev monitoring
 ```
 
-**Manuel Yol:**
-
-```powershell
-# Development ortamını başlat
-Set-Location monitoring\environments\dev
-docker-compose up -d
-
-# veya kök dizinden
-docker-compose -f monitoring/environments/dev/docker-compose.yml up -d
-```
-
 ### 3️⃣ Erişim
 
-**Development (dev):**
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000
-  - Username: `admin`
-  - Password: `.env` dosyasındaki `GRAFANA_ADMIN_PASSWORD`
+| Ortam | Prometheus `→9090` | Grafana `→3000` |
+|-------|---------------------|---------------|
+| **Dev** | http://localhost:9090 | http://localhost:3000 |
+| **Test** | http://localhost:9091 | http://localhost:3001 |
+| **Prod** | http://localhost:9092 | http://localhost:3002 |
 
-**Test:**
-- **Prometheus**: http://localhost:9091
-- **Grafana**: http://localhost:3001
-
-**Production (prod):**
-- **Prometheus**: http://localhost:9092
-- **Grafana**: http://localhost:3002
+> Grafana giriş: `admin` / `.env` dosyasındaki `GRAFANA_ADMIN_PASSWORD`
 
 ## 📋 Komutlar
 

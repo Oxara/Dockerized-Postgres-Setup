@@ -5,63 +5,20 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment Redis + R
 ## 📁 Klasör Yapısı
 
 ```
-redis-docker/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── prod/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-├── manage.ps1              # Windows yönetim scripti
-└── README.md
+redis/
+└── environments/
+    ├── dev/
+    │   ├── docker-compose.yml
+    │   └── .env
+    ├── test/
+    │   ├── docker-compose.yml
+    │   └── .env
+    └── prod/
+        ├── docker-compose.yml
+        └── .env
 ```
 
-### 🔍 Klasör Yapısı Açıklaması
-
-**Her ortam tamamen izole şekilde kendi klasöründe çalışır:**
-
-- **`environments/dev/`** - Development (Geliştirme) ortamı
-  - `docker-compose.yml` - Dev için compose yapılandırması
-  - `.env` - Dev ortam değişkenleri (Redis: 6379, RedisInsight: 8001)
-
-- **`environments/test/`** - Test ortamı
-  - `docker-compose.yml` - Test için compose yapılandırması
-  - `.env` - Test ortam değişkenleri (Redis: 6380, RedisInsight: 8002)
-
-- **`environments/prod/`** - Production (Canlı) ortamı
-  - `docker-compose.yml` - Prod için compose yapılandırması
-  - `.env` - Prod ortam değişkenleri (Redis: 6381, RedisInsight: 8003)
-
-**Yönetim Dosyası:**
-- `manage.ps1` - Windows PowerShell yönetim scripti
-
-### 📝 Yeni Ortam Ekleme
-
-Yeni bir ortam eklemek isterseniz:
-
-```powershell
-# 1. Yeni klasör oluştur
-New-Item -ItemType Directory -Path environments/staging
-
-# 2. .env dosyasını başka ortamdan kopyala
-Copy-Item environments/dev/.env environments/staging/.env
-
-# 3. docker-compose.yml'yi kopyala
-Copy-Item environments/dev/docker-compose.yml environments/staging/docker-compose.yml
-
-# 4. Değerleri düzenle (.env ve docker-compose.yml)
-# - Container isimleri: redis_staging, redisinsight_staging
-# - Portlar: 6382, 8004 (benzersiz olmalı)
-# - Volume ve network isimleri: redis_staging_*, redis_staging_network
-
-# 5. Başlat
-Set-Location environments/staging
-docker-compose up -d
-```
+> Servis `.\manage.ps1` ile proje kök dizininden yönetilir. Yönetim komutları için [ana README](../README.md)'e bakın.
 
 ## ✨ Özellikler
 
@@ -83,9 +40,9 @@ docker-compose up -d
 
 ```powershell
 # Her ortam için .env.example'dan kopyala
-Copy-Item environments\dev\.env.example environments\dev\.env
-Copy-Item environments\test\.env.example environments\test\.env
-Copy-Item environments\prod\.env.example environments\prod\.env
+Copy-Item redis\environments\dev\.env.example redis\environments\dev\.env
+Copy-Item redis\environments\test\.env.example redis\environments\test\.env
+Copy-Item redis\environments\prod\.env.example redis\environments\prod\.env
 ```
 
 **Her ortam için portları ayarlayın:**
@@ -113,17 +70,6 @@ REDIS_PASSWORD=ÇOK_GÜÇLÜ_PROD_ŞİFRESİ_123!@#
 
 ```powershell
 .\manage.ps1 start dev redis
-```
-
-**Manuel Yol:**
-
-```powershell
-# Development ortamını başlat
-Set-Location environments\dev
-docker-compose up -d
-
-# veya kök dizinden
-docker-compose -f environments/dev/docker-compose.yml up -d
 ```
 
 ### 3️⃣ Erişim
@@ -364,38 +310,7 @@ public class CacheController : ControllerBase
 }
 ```
 
-## 📋 Yönetim Komutları
-
-
-
-## 🐳 Container Detayları
-
-### Redis Container
-- **Image**: redis:7-alpine
-- **Özellikler**:
-  - AOF (Append Only File) persistence etkin
-  - Password koruması
-  - Health check yapılandırılmış
-  - Otomatik restart
-
-### RedisInsight Container
-- **Image**: redis/redisinsight:latest
-- **Özellikler**:
-  - Modern web tabanlı Redis GUI
-  - Browser üzerinden çalışır
-  - Veri görselleştirme
-  - Query çalıştırma
-  - Real-time monitoring
-
-## 📊 Port Dağılımı
-
-| Ortam      | Redis | RedisInsight |
-|------------|-------|-------------|
-| Development| 6379  | 8001         |
-| Test       | 6380  | 8002         |
-| Production | 6381  | 8003         |
-
-## 💾 Veri Kalıcılığı (Persistence)
+##  Veri Kalıcılığı (Persistence)
 
 Her ortam için ayrı named volumes kullanılır:
 
@@ -534,21 +449,6 @@ docker cp backup_dev_20260220.rdb redis_dev:/data/dump.rdb
 docker-compose restart redis
 ```
 
-## 🐛 Sorun Giderme
-
-### Port Zaten Kullanılıyor
-
-**Problemi tespit edin:**
-```powershell
-# Port kontrolü
-netstat -ano | findstr :6379
-```
-
-**Çözüm:** İlgili ortamın `.env` dosyasında portu değiştirin:
-```env
-REDIS_PORT=6382
-```
-
 ## 🌐 Network İzolasyonu
 
 Her ortam kendi network'ünde çalışır:
@@ -683,7 +583,14 @@ redis-cli -h localhost -p 6379 -a redis_dev_password PING
 Test-NetConnection -ComputerName localhost -Port 6379
 ```
 
-## 🆘 Sorun Giderme
+## 🔍 Sorun Giderme
+
+### Port Zaten Kullanılıyor
+
+```powershell
+netstat -ano | findstr :6379
+```
+Çözüm: İlgili ortamın `.env` dosyasında `REDIS_PORT` değerini değiştirin.
 
 ### Container Başlamıyor
 

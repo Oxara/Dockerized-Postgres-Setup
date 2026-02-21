@@ -6,17 +6,19 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment MongoDB +
 
 ```
 mongodb/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   └── prod/
-│       ├── docker-compose.yml
-│       └── .env
+└── environments/
+    ├── dev/
+    │   ├── docker-compose.yml
+    │   └── .env
+    ├── test/
+    │   ├── docker-compose.yml
+    │   └── .env
+    └── prod/
+        ├── docker-compose.yml
+        └── .env
 ```
+
+> Servis `.\manage.ps1` ile proje kök dizininden yönetilir. Yönetim komutları için [ana README](../README.md)'e bakın.
 
 ## ✨ Özellikler
 
@@ -37,9 +39,9 @@ mongodb/
 
 ```powershell
 # Her ortam için .env.example'dan kopyala
-Copy-Item environments\dev\.env.example environments\dev\.env
-Copy-Item environments\test\.env.example environments\test\.env
-Copy-Item environments\prod\.env.example environments\prod\.env
+Copy-Item mongodb\environments\dev\.env.example mongodb\environments\dev\.env
+Copy-Item mongodb\environments\test\.env.example mongodb\environments\test\.env
+Copy-Item mongodb\environments\prod\.env.example mongodb\environments\prod\.env
 ```
 
 **Güvenlik için şifreleri değiştirin:**
@@ -67,32 +69,15 @@ MONGOEXPRESS_PASSWORD=ÇOK_GÜÇLÜ_MONGOEXPRESS_ŞİFRESİ_456!@#
 .\manage.ps1 start dev mongodb
 ```
 
-**Manuel Yol:**
-
-```powershell
-# Development ortamını başlat
-Set-Location mongodb\environments\dev
-docker-compose up -d
-
-# veya kök dizinden
-docker-compose -f mongodb/environments/dev/docker-compose.yml up -d
-```
-
 ### 3️⃣ Erişim
 
-**Development (dev):**
-- **MongoDB**: `mongodb://admin:password@localhost:27017`
-- **Mongo Express**: http://localhost:8081
-  - Username: `admin`
-  - Password: `.env` dosyasındaki `MONGOEXPRESS_PASSWORD`
+| Ortam | MongoDB `→27017` | Mongo Express `→8081` |
+|-------|------------------|----------------------|
+| **Dev** | `localhost:27017` | http://localhost:8081 |
+| **Test** | `localhost:27018` | http://localhost:8082 |
+| **Prod** | `localhost:27019` | http://localhost:8083 |
 
-**Test:**
-- **MongoDB**: `mongodb://admin:password@localhost:27018`
-- **Mongo Express**: http://localhost:8082
-
-**Production (prod):**
-- **MongoDB**: `mongodb://admin:password@localhost:27019`
-- **Mongo Express**: http://localhost:8083
+> Mongo Express giriş bilgileri: `.env` dosyasındaki `MONGOEXPRESS_LOGIN` / `MONGOEXPRESS_PASSWORD`
 
 ## 📋 Komutlar
 

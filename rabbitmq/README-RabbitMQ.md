@@ -5,63 +5,20 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment RabbitMQ 
 ## 📁 Klasör Yapısı
 
 ```
-rabbitmq-docker/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── prod/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-├── manage.ps1              # Windows yönetim scripti
-└── README.md
+rabbitmq/
+└── environments/
+    ├── dev/
+    │   ├── docker-compose.yml
+    │   └── .env
+    ├── test/
+    │   ├── docker-compose.yml
+    │   └── .env
+    └── prod/
+        ├── docker-compose.yml
+        └── .env
 ```
 
-### 🔍 Klasör Yapısı Açıklaması
-
-**Her ortam tamamen izole şekilde kendi klasöründe çalışır:**
-
-- **`environments/dev/`** - Development (Geliştirme) ortamı
-  - `docker-compose.yml` - Dev için compose yapılandırması
-  - `.env` - Dev ortam değişkenleri (AMQP: 5672, Management: 15672)
-
-- **`environments/test/`** - Test ortamı
-  - `docker-compose.yml` - Test için compose yapılandırması
-  - `.env` - Test ortam değişkenleri (AMQP: 5673, Management: 15673)
-
-- **`environments/prod/`** - Production (Canlı) ortamı
-  - `docker-compose.yml` - Prod için compose yapılandırması
-  - `.env` - Prod ortam değişkenleri (AMQP: 5674, Management: 15674)
-
-**Yönetim Dosyası:**
-- `manage.ps1` - Windows için otomatik yönetim scripti
-
-### 📝 Yeni Ortam Ekleme
-
-Yeni bir ortam eklemek isterseniz:
-
-```powershell
-# 1. Yeni klasör oluştur
-New-Item -ItemType Directory -Path environments/staging
-
-# 2. .env dosyasını başka ortamdan kopyala
-Copy-Item environments/dev/.env environments/staging/.env
-
-# 3. docker-compose.yml'yi kopyala
-Copy-Item environments/dev/docker-compose.yml environments/staging/docker-compose.yml
-
-# 4. Değerleri düzenle (.env ve docker-compose.yml)
-# - Container isimleri: rabbitmq_staging
-# - Portlar: 5675, 15675 (benzersiz olmalı)
-# - Volume ve network isimleri: rabbitmq_staging_*, rabbitmq_staging_network
-
-# 5. Başlat
-Set-Location environments/staging
-docker-compose up -d
-```
+> Servis `.\manage.ps1` ile proje kök dizininden yönetilir. Yönetim komutları için [ana README](../README.md)'e bakın.
 
 ## ✨ Özellikler
 
@@ -82,9 +39,9 @@ docker-compose up -d
 
 ```powershell
 # Her ortam için .env.example'dan kopyala
-Copy-Item environments\dev\.env.example environments\dev\.env
-Copy-Item environments\test\.env.example environments\test\.env
-Copy-Item environments\prod\.env.example environments\prod\.env
+Copy-Item rabbitmq\environments\dev\.env.example rabbitmq\environments\dev\.env
+Copy-Item rabbitmq\environments\test\.env.example rabbitmq\environments\test\.env
+Copy-Item rabbitmq\environments\prod\.env.example rabbitmq\environments\prod\.env
 ```
 
 **Her ortam için portları ayarlayın:**
@@ -115,21 +72,10 @@ RABBITMQ_PASSWORD=ÇOK_GÜÇLÜ_PROD_ŞİFRESİ_123!@#
 .\manage.ps1 start dev rabbitmq
 ```
 
-**Manuel Yol:**
-
-```powershell
-# Development ortamını başlat
-Set-Location environments/dev
-docker-compose up -d
-
-# veya kök dizinden
-docker-compose -f environments/dev/docker-compose.yml up -d
-```
-
 ### 3️⃣ Erişim
 
-| Ortam | AMQP | Management UI |
-|-------|------|---------------|
+| Ortam | AMQP `→5672` | Management UI `→15672` |
+|-------|--------------|------------------------|
 | **Dev** | `localhost:5672` | http://localhost:15672 |
 | **Test** | `localhost:5673` | http://localhost:15673 |
 | **Prod** | `localhost:5674` | http://localhost:15674 |
@@ -463,26 +409,7 @@ builder.Services.AddSingleton<RabbitMQProducer>();
 builder.Services.AddHostedService<RabbitMQConsumer>();
 ```
 
-## 🐳 Container Detayları
-
-### RabbitMQ Container
-- **Image**: rabbitmq:3-management-alpine
-- **Özellikler**:
-  - Management UI dahil
-  - Alpine tabanlı (küçük boyut)
-  - Data persistence
-  - Health check yapılandırılmış
-  - Otomatik restart
-
-## 📊 Port Dağılımı
-
-| Ortam      | AMQP | Management UI |
-|------------|------|---------------|
-| Development| 5672 | 15672         |
-| Test       | 5673 | 15673         |
-| Production | 5674 | 15674         |
-
-## 💾 Veri Kalıcılığı (Persistence)
+##  Veri Kalıcılığı (Persistence)
 
 Her ortam için ayrı named volumes kullanılır:
 

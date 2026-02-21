@@ -1,0 +1,17 @@
+services:
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog_prod
+    restart: always
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1027}:1025"
+      - "${MAILHOG_WEB_PORT:-8027}:8025"
+    networks:
+      - mailhog_network
+
+volumes: {}
+
+networks:
+  mailhog_network:
+    name: mailhog_prod_network
+    driver: bridge

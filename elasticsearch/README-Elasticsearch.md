@@ -5,39 +5,20 @@ Modern, best-practice yaklaşımıyla hazırlanmış multi-environment Elasticse
 ## 📁 Klasör Yapısı
 
 ```
-elasticsearch-docker/
-├── environments/
-│   ├── dev/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── test/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-│   ├── prod/
-│   │   ├── docker-compose.yml
-│   │   └── .env
-├── manage.ps1              # Windows yönetim scripti
-└── README.md
+elasticsearch/
+└── environments/
+    ├── dev/
+    │   ├── docker-compose.yml
+    │   └── .env
+    ├── test/
+    │   ├── docker-compose.yml
+    │   └── .env
+    └── prod/
+        ├── docker-compose.yml
+        └── .env
 ```
 
-### 🔍 Klasör Yapısı Açıklaması
-
-**Her ortam tamamen izole şekilde kendi klasöründe çalışır:**
-
-- **`environments/dev/`** - Development (Geliştirme) ortamı
-  - `docker-compose.yml` - Dev için compose yapılandırması
-  - `.env` - Dev ortam değişkenleri (Elasticsearch: 9200, Kibana: 5601)
-
-- **`environments/test/`** - Test ortamı
-  - `docker-compose.yml` - Test için compose yapılandırması
-  - `.env` - Test ortam değişkenleri (Elasticsearch: 9201, Kibana: 5602)
-
-- **`environments/prod/`** - Production (Canlı) ortamı
-  - `docker-compose.yml` - Prod için compose yapılandırması
-  - `.env` - Prod ortam değişkenleri (Elasticsearch: 9202, Kibana: 5603)
-
-**Yönetim Dosyası:**
-- `manage.ps1` - Windows için otomatik yönetim scripti
+> Servis `.\manage.ps1` ile proje kök dizininden yönetilir. Yönetim komutları için [ana README](../README.md)'e bakın.
 
 ## ✨ Özellikler
 
@@ -59,9 +40,9 @@ elasticsearch-docker/
 
 ```powershell
 # Her ortam için .env.example'dan kopyala
-Copy-Item environments\dev\.env.example environments\dev\.env
-Copy-Item environments\test\.env.example environments\test\.env
-Copy-Item environments\prod\.env.example environments\prod\.env
+Copy-Item elasticsearch\environments\dev\.env.example elasticsearch\environments\dev\.env
+Copy-Item elasticsearch\environments\test\.env.example elasticsearch\environments\test\.env
+Copy-Item elasticsearch\environments\prod\.env.example elasticsearch\environments\prod\.env
 ```
 
 **Her ortam için portlar zaten ayarlı:**
@@ -92,21 +73,10 @@ ELASTIC_PASSWORD=ÇOK_GÜÇLÜ_PROD_ŞİFRESİ_123!@#
 .\manage.ps1 start dev elasticsearch
 ```
 
-**Manuel Yol:**
-
-```powershell
-# Development ortamını başlat
-Set-Location environments\dev
-docker-compose up -d
-
-# veya kök dizinden
-docker-compose -f environments/dev/docker-compose.yml up -d
-```
-
 ### 3️⃣ Erişim
 
-| Ortam | Elasticsearch API | Kibana UI |
-|-------|-------------------|-----------|
+| Ortam | Elasticsearch API `→9200` | Kibana UI `→5601` |
+|-------|---------------------------|------------------|
 | **Dev** | http://localhost:9200 | http://localhost:5601 |
 | **Test** | http://localhost:9201 | http://localhost:5602 |
 | **Prod** | http://localhost:9202 | http://localhost:5603 |
@@ -553,34 +523,7 @@ POST /_bulk
 { "name": "Charlie", "age": 28, "email": "charlie@example.com" }
 ```
 
-## 🐳 Container Detayları
-
-### Elasticsearch Container
-- **Image**: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
-- **Özellikler**:
-  - Single node mode
-  - X-Pack Security enabled
-  - Memory: 512MB (dev/test), 1GB (prod)
-  - Data persistence
-  - Health check yapılandırılmış
-
-### Kibana Container
-- **Image**: docker.elastic.co/kibana/kibana:8.12.0
-- **Özellikler**:
-  - Web UI dashboard
-  - Dev Tools Console
-  - Visualizations
-  - Index Management
-
-## 📊 Port Dağılımı
-
-| Ortam      | Elasticsearch | Kibana |
-|------------|---------------|--------|
-| Development| 9200          | 5601   |
-| Test       | 9201          | 5602   |
-| Production | 9202          | 5603   |
-
-## 💾 Veri Kalıcılığı (Persistence)
+##  Veri Kalıcılığı (Persistence)
 
 Her ortam için ayrı named volumes kullanılır:
 
