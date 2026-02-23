@@ -5,6 +5,27 @@ Bu proje [Keep a Changelog](https://keepachangelog.com/tr/1.0.0/) formatını ve
 
 ---
 
+## [1.3.0] - 2026-02-23
+
+### Eklendi
+- **n8n** (Workflow Automation) — dev / test / prod ortamları
+  - `n8nio/n8n:latest` image, SQLite backend, dahili Web UI
+  - Basic auth ve `N8N_ENCRYPTION_KEY` desteği
+  - MailHog (SMTP), RabbitMQ, PostgreSQL, Redis ve diğer stack servisleriyle entegrasyon örnekleri
+  - Webhook kullanımı ve zamanlanmış görev (cron) senaryoları
+  - Backup / restore ve n8n CLI export/import dokümantasyonu
+- `manage.ps1` güncellendi: `n8n` servisi eklendi (`start`, `stop`, `restart`, `logs`, `status`, `clean`, `purge`, `pull`)
+- `README-n8n.md` oluşturuldu
+- `BRD.md` güncellendi: §2.12 n8n servis gereksinimleri, port tabloları ve Ek B karşılaştırma tablosu eklendi
+- `README.md` güncellendi: servis kataloğu, port tablosu ve dokümantasyon linkleri güncellendi
+
+### Port Atamaları
+| Bileşen | Dev | Test | Prod |
+|---------|-----|------|------|
+| n8n Web UI | 5678 | 5679 | 5680 |
+
+---
+
 ## [1.2.0] - 2026-02-21
 
 ### Eklendi

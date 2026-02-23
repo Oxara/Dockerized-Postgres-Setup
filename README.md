@@ -32,6 +32,7 @@ Bu proje, 10 bağımsız servisi birden fazla ortamda (Development, Test, Produc
 | **Keycloak** | Keycloak 26 + PostgreSQL | OAuth2/OIDC identity server |
 | **Seq** | Seq Log Server | Structured log analizi (.NET) |
 | **MailHog** | Fake SMTP Server | E-posta tuzağı (dev/test) |
+| **n8n** | n8n Workflow | Otomasyon ve entegrasyon |
 
 Her servis **dev / test / prod** ortamlarında tamamen izole çalışır. `manage.ps1` ile tek komutla yönetilir.
 
@@ -67,10 +68,11 @@ docker-service-stack/
 | `keycloak/` | Keycloak 26 | Admin Console |
 | `seq/` | Seq Log Server | Web UI (dahili) |
 | `mailhog/` | MailHog SMTP | Web UI (dahili) |
+| `n8n/` | n8n Workflow | Web UI (dahili) |
 
 ## ✨ Özellikler
 
-- ✅ **Multi-Service Support**: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring, MSSQL, Keycloak, Seq ve MailHog aynı anda veya ayrı ayrı
+- ✅ **Multi-Service Support**: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring, MSSQL, Keycloak, Seq, MailHog ve n8n aynı anda veya ayrı ayrı
 - ✅ **Tamamen İzole Ortamlar**: Her ortam kendi klasöründe
 - ✅ **Kolay Yönetim**: Tek komutla tüm servisleri kontrol edin
 - ✅ **Paralel Çalışma**: `start`, `stop`, `restart` ve `pull` komutları tüm servisler için paralel çalışır
@@ -119,7 +121,7 @@ Oluşturulan `.env` dosyalarındaki örnek şifreleri gerçek kullanımdan önce
 |-----------|-----------|
 | **komut** | `start` · `stop` · `restart` · `logs` · `status` · `clean` · `purge` · `pull` |
 | **ortam** | `dev` · `test` · `prod` |
-| **servis** | `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog` · `all` |
+| **servis** | `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog` · `n8n` · `all` |
 
 ### 3️⃣ Örnek Komutlar
 
@@ -166,13 +168,14 @@ Oluşturulan `.env` dosyalarındaki örnek şifreleri gerçek kullanımdan önce
 | **Seq** | Web UI + Ingestion | 80 | 5341 | 5342 | 5343 |
 | **MailHog** | SMTP | 1025 | 1025 | 1026 | 1027 |
 | | Web UI | 8025 | 8025 | 8026 | 8027 |
+| **n8n** | Web UI | 5678 | 5678 | 5679 | 5680 |
 ## 🔧 Yapılandırma
 
 Şablon: `{servis}/environments/{env}/.env.example` → `{servis}/environments/{env}/.env` olarak kopyalanır.
 
 Toplam **30 dosya** (10 servis × 3 ortam) — hepsi `.gitignore` tarafından korunur.
 
-Servisler: `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog`
+Servisler: `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` · `monitoring` · `mssql` · `keycloak` · `seq` · `mailhog` · `n8n`
 
 > ⚠️ Production ortamları için mutlaka güçlü şifreler kullanın!
 
@@ -190,6 +193,7 @@ Servisler: `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` �
 | 🔐 Keycloak | [README-Keycloak.md](keycloak/README-Keycloak.md) | JWT Bearer · OIDC · Blazor entegrasyonu · Admin API |
 | 📋 Seq | [README-Seq.md](seq/README-Seq.md) | Serilog/NLog sink · FilterExpressions · Alert/Signal |
 | 📧 MailHog | [README-MailHog.md](mailhog/README-MailHog.md) | MailKit servisi · DI entegrasyonu · Integration test |
+| ⚙️ n8n | [README-n8n.md](n8n/README-n8n.md) | Workflow otomasyonu · Webhook entegrasyonu · .NET API bağlantısı |
 
 ## 💡 Kullanım Senaryoları
 
@@ -235,6 +239,7 @@ Servisler: `postgres` · `redis` · `rabbitmq` · `elasticsearch` · `mongodb` �
 # Seq: http://localhost:5341
 # MailHog Web UI: http://localhost:8025
 # MailHog SMTP: localhost:1025
+# n8n: http://localhost:5678
 
 # Durumu kontrol et
 .\manage.ps1 status dev all

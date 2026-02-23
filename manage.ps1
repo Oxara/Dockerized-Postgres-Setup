@@ -1,6 +1,6 @@
 # Multi-Service Docker Environment Management Script
 # Services: PostgreSQL, Redis, RabbitMQ, Elasticsearch, MongoDB, Monitoring (Prometheus + Grafana)
-#           MSSQL (SQL Server), Keycloak, Seq, MailHog
+#           MSSQL (SQL Server), Keycloak, Seq, MailHog, n8n
 # Usage: .\manage.ps1 [action] [environment] [service]
 # Example: .\manage.ps1 start dev postgres
 #          .\manage.ps1 start dev redis
@@ -12,6 +12,7 @@
 #          .\manage.ps1 start dev keycloak
 #          .\manage.ps1 start dev seq
 #          .\manage.ps1 start dev mailhog
+#          .\manage.ps1 start dev n8n
 #          .\manage.ps1 start dev all
 #          .\manage.ps1 stop test all
 #          .\manage.ps1 pull dev all
@@ -29,7 +30,7 @@ param(
     [string]$Environment = "",
 
     [Parameter(Position=2)]
-    [ArgumentCompleter({ "postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring","mssql","keycloak","seq","mailhog","all" })]
+    [ArgumentCompleter({ "postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring","mssql","keycloak","seq","mailhog","n8n","all" })]
     [string]$Service = ""
 )
 
@@ -44,7 +45,7 @@ function Write-ErrorMessage { Write-Host $args -ForegroundColor Red    }
 # ── Argument validation ────────────────────────────────────────────────────────
 $validActions  = @("start","stop","restart","logs","status","clean","purge","pull")
 $validEnvs     = @("dev","test","prod")
-$validServices = @("postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring","mssql","keycloak","seq","mailhog","all")
+$validServices = @("postgres","redis","rabbitmq","elasticsearch","mongodb","monitoring","mssql","keycloak","seq","mailhog","n8n","all")
 
 $errors = @()
 
@@ -113,7 +114,10 @@ function Assert-DockerRunning {
         do {
             Start-Sleep -Seconds 3
             $elapsed += 3
+            $prev2 = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
             docker info 2>&1 | Out-Null
+            $ErrorActionPreference = $prev2
         } while ($LASTEXITCODE -ne 0 -and $elapsed -lt $timeout)
 
         if ($LASTEXITCODE -eq 0) {
@@ -177,6 +181,11 @@ $services = @{
         "name" = "MailHog"
         "path" = "mailhog"
         "icon" = "[MH]"
+    }
+    "n8n" = @{
+        "name" = "n8n"
+        "path" = "n8n"
+        "icon" = "[N8]"
     }
 }
 
@@ -362,7 +371,7 @@ function Show-Status {
     Write-Info "Container Status:"
     Write-Host ""
     
-    $servicesToCheck = if ($svc -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog") } else { @($svc) }
+    $servicesToCheck = if ($svc -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog", "n8n") } else { @($svc) }
     
     foreach ($service in $servicesToCheck) {
         $svcInfo = $services[$service]
@@ -673,14 +682,14 @@ $parallelActionBlock = {
 # Main logic
 Write-Info "======================================="
 Write-Info "  Multi-Service Docker Manager"
-Write-Info "  PG + Redis + RabbitMQ + ES + Mongo + Mon + MSSQL + KC + Seq + MH"
+Write-Info "  PG + Redis + RabbitMQ + ES + Mongo + Mon + MSSQL + KC + Seq + MH + N8"
 Write-Info "======================================="
 Write-Host ""
 
 Assert-DockerRunning
 
 # Determine service list
-$servicesToProcess = if ($Service -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog") } else { @($Service) }
+$servicesToProcess = if ($Service -eq "all") { @("postgres", "redis", "rabbitmq", "elasticsearch", "mongodb", "monitoring", "mssql", "keycloak", "seq", "mailhog", "n8n") } else { @($Service) }
 
 # Execute operations
 $isAll        = $servicesToProcess.Count -gt 1
